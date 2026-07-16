@@ -72,7 +72,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
   };
 
   return (
-    <div className="rounded-[2rem] border border-white/80 bg-white/75 p-4 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl sm:p-5">
+    <div className="rounded-[2rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl sm:p-5">
       
 
       <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[#F7FBFC]">
@@ -88,7 +88,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
           </span>
         </div>
 
-        <MapContainer center={DEFAULT_CENTER} zoom={8} scrollWheelZoom className="h-[220px] w-full sm:h-[420px]">
+        <MapContainer center={DEFAULT_CENTER} zoom={8} scrollWheelZoom className="h-[300px] w-full sm:h-[420px]">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

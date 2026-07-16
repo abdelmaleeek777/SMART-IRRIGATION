@@ -1,62 +1,266 @@
-import RecommendationCard from '../components/dashboard/RecommendationCard';
-import StatCard from '../components/dashboard/StatCard';
-import { recommendations, stats, weatherHighlights } from '../data/mock';
+import {
+  CartesianGrid,
+  Bar,
+  BarChart,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  Area,
+  AreaChart,
+} from 'recharts';
+import { weatherHistory, irrigationHistory, weatherHighlights } from '../data/mock';
+
+function WeatherTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+
+  const item = payload[0].payload;
+
+  return (
+    <div className="rounded-2xl border border-iceBlue bg-white px-4 py-3 shadow-[0_14px_30px_rgba(2,48,71,0.12)]">
+      <p className="text-sm font-semibold text-midnight">{item.fullDate}</p>
+      <p className="mt-2 text-sm text-oceanBlue">Temperature: <span className="font-semibold text-midnight">{item.temperature}°C</span></p>
+      <p className="mt-1 text-sm text-aquaBlue">Humidity: <span className="font-semibold text-midnight">{item.humidity}%</span></p>
+    </div>
+  );
+}
+
+function TemperatureTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+
+  const item = payload[0].payload;
+
+  return (
+    <div className="rounded-2xl border border-iceBlue bg-white px-4 py-3 shadow-[0_14px_30px_rgba(2,48,71,0.12)]">
+      <p className="text-sm font-semibold text-midnight">{item.fullDate}</p>
+      <p className="mt-2 text-sm text-oceanBlue">
+        Température: <span className="font-semibold text-midnight">{item.temperature}°C</span>
+      </p>
+    </div>
+  );
+}
+
+function HumidityTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+
+  const item = payload[0].payload;
+
+  return (
+    <div className="rounded-2xl border border-iceBlue bg-white px-4 py-3 shadow-[0_14px_30px_rgba(2,48,71,0.12)]">
+      <p className="text-sm font-semibold text-midnight">{item.fullDate}</p>
+      <p className="mt-2 text-sm text-aquaBlue">
+        Humidité: <span className="font-semibold text-midnight">{item.humidity}%</span>
+      </p>
+    </div>
+  );
+}
+
+function IrrigationTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+
+  const item = payload[0].payload;
+
+  return (
+    <div className="rounded-2xl border border-iceBlue bg-white px-4 py-3 shadow-[0_14px_30px_rgba(2,48,71,0.12)]">
+      <p className="text-sm font-semibold text-midnight">{label}</p>
+      {payload.map((item) => (
+        <p
+          key={item.dataKey}
+          className="text-sm text-slate-600"
+        >
+          {item.name}:{" "}
+
+          <span className="font-semibold text-[#0077B6]">
+            {item.value} mm
+          </span>
+
+        </p>
+      ))}
+    </div>
+  );
+}
 
 export default function Dashboard() {
   return (
     <div className="space-y-8">
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
-      </section>
+      </section> */}
 
-      <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
+      <section className="grid gap-6">
+        <div className="rounded-3xl border border-aquaBlue/20 p-6 bg-backdrpop-blur shadow-[0_18px_60px_rgba(2,48,71,0.08)]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-cyan-700">Météo actuelle</p>
-              <h3 className="mt-1 text-2xl font-bold text-slate-900">Lecture rapide des conditions</h3>
+              <p className="text-2xl uppercase font-semibold text-cyan-700">Météo actuelle</p>
+              <h3 className="mt-1 text-xl font-bold text-slate-900">Parcelle 1</h3>
             </div>
-            <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-800">
-              Open-Meteo
-            </span>
-          </div>
 
+          </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {weatherHighlights.map((item) => (
-              <div key={item.label} className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-sm text-slate-500">{item.label}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">{item.value}</p>
+              <div
+                key={item.label}
+                className="relative overflow-hidden rounded-2xl border border-iceBlue bg-arcticWhite/95 p-5 shadow-[0_12px_30px_rgba(2,48,71,0.06)] backdrop-blur"
+              >
+                <div className="relative z-10 space-y-3">
+                  <p className="text-sm font-medium text-midnight/60">{item.label}</p>
+                  <p className="text-3xl font-bold text-midnight">{item.value}</p>
+                </div>
+
+                <div className="pointer-events-none absolute -bottom-4 -right-4 opacity-45">
+                  <div className={`flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${item.accent} rotate-[-14deg]`}>
+                    <item.icon className={`h-12 w-12 ${item.iconColor}`} />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-slate-950 p-6 text-white shadow-soft">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-cyan-300">Cycle ML</p>
-          <h3 className="mt-3 text-2xl font-bold">Prétraitement, prédiction et recommandation</h3>
-          <p className="mt-4 text-sm leading-7 text-slate-300">
-            Cette zone servira à brancher le backend FastAPI, le modèle de machine learning et le stockage
-            des prédictions dans PostgreSQL.
-          </p>
-        </div>
       </section>
 
-      <section>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-cyan-700">Dernières recommandations</p>
-            <h3 className="mt-1 text-2xl font-bold text-slate-900">Historique à consulter depuis le dashboard</h3>
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-3xl border border-iceBlue bg-arcticWhite p-6 shadow-[0_18px_60px_rgba(2,48,71,0.08)]">
+          <div className="mb-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-oceanBlue">Évolution de la température</p>
+            <h3 className="mt-2 text-2xl font-bold text-midnight">Température des 7 derniers jours</h3>
+          </div>
+
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={weatherHistory} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="temperatureGradient" x1="0" y1="0" x2="0" y2="1">
+                    {/* Stronger blue at the top */}
+                    <stop offset="0%" stopColor="#0077B6" stopOpacity={0.4} />
+
+                    {/* Transparent at the bottom */}
+                    <stop offset="100%" stopColor="#00B4D8" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#CAF0F8" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#0F172A', fontSize: 12 }} />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#0F172A', fontSize: 12 }}
+                  width={34}
+                />
+                <Tooltip content={<TemperatureTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: 8 }} />
+                <Area
+                  type="monotone"
+                  dataKey="temperature"
+                  name="Temperature"
+                  stroke="#0077B6"
+                  strokeWidth={3}
+                  dot={{ r: 4, stroke: '#0077B6', strokeWidth: 1, fill: '#0077B6' }}
+                  activeDot={{ r: 6 }}
+                  fill="url(#temperatureGradient)"
+                />
+                
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="rounded-3xl border border-iceBlue bg-arcticWhite p-6 shadow-[0_18px_60px_rgba(2,48,71,0.08)]">
+          <div className="mb-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-oceanBlue">Évolution de l'humidité</p>
+            <h3 className="mt-2 text-2xl font-bold text-midnight">Humidité des 7 derniers jours</h3>
+          </div>
+
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={weatherHistory} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <defs>
+                  <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
+                    {/* Stronger blue at the top */}
+                    <stop offset="0%" stopColor="#00B4D8" stopOpacity={0.4} />
+
+                    {/* Transparent at the bottom */}
+                    <stop offset="100%" stopColor="#00B4D8" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#CAF0F8" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#0F172A', fontSize: 12 }} />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#0F172A', fontSize: 12 }}
+                  width={34}
+                />
+                <Tooltip content={<HumidityTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: 8 }} />
+                <Area
+                  type="monotone"
+                  dataKey="humidity"
+                  name="Humidity"
+                  stroke="#00B4D8"
+                  strokeWidth={3}
+                  dot={{ r: 4, stroke: '#00B4D8', strokeWidth: 2, fill: '#F7FBFC' }}
+                  activeDot={{ r: 6 }}
+                  fill="url(#humidityGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {recommendations.map((item) => (
-            <RecommendationCard key={`${item.parcel}-${item.time}`} {...item} />
-          ))}
+
+
+      </section><div className="rounded-3xl border border-iceBlue bg-arcticWhite p-6 shadow-[0_18px_60px_rgba(2,48,71,0.08)]">
+        <div className="mb-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-oceanBlue">Historique de recommandations</p>
+          <h3 className="mt-2 text-2xl font-bold text-midnight">Quantité d'eau recommandée par parcelle</h3>
         </div>
-      </section>
+
+        <div className="h-[320px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={irrigationHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#CAF0F8" strokeDasharray="3 3" vertical={false} />
+              <Legend wrapperStyle={{ paddingBottom: 8 }} />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#0F172A', fontSize: 12 }} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#0F172A', fontSize: 12 }}
+                width={34}
+                label={{ value: 'mm', angle: -90, position: 'insideLeft', fill: '#0F172A' }}
+              />
+              <Tooltip content={<IrrigationTooltip />} />
+              <Bar
+                dataKey="parcel1"
+                name="Parcelle 1"
+                fill="#0077B6"
+
+                barSize={44}
+                stackId="irrigation"
+              />
+              <Bar
+                dataKey="parcel2"
+                name="Parcelle 2"
+                fill="#00B4D8"
+
+                barSize={44}
+                stackId="irrigation"
+              />
+              <Bar
+                dataKey="parcel3"
+                name="Parcelle 3"
+                fill="#48CAE4"
+                radius={[16, 16, 0, 0]}
+                barSize={44}
+                stackId="irrigation"
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 }

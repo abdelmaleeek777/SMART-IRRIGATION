@@ -74,13 +74,13 @@ export default function Home() {
 
               <div className="flex items-center gap-3">
                 <Link
-                  to="/auth/login"
+                  to="/login"
                   className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-[#023047]"
                 >
                   Sign In
                 </Link>
                 <Link
-                  to="/auth/register"
+                  to="/register"
                   className="rounded-full bg-[#0077B6] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,119,182,0.26)] transition hover:bg-[#005f94]"
                 >
                   Get Started
@@ -110,7 +110,7 @@ export default function Home() {
 
               <div className="mt-10 flex flex-col gap-4 sm:flex-row">
                 <Link
-                  to="/auth/register"
+                  to="/register"
                   className="inline-flex items-center justify-center rounded-full bg-[#0077B6] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_16px_35px_rgba(0,119,182,0.28)] transition hover:-translate-y-0.5 hover:bg-[#005f94]"
                 >
                   Get Started
@@ -257,7 +257,7 @@ export default function Home() {
             </p>
             <div className="flex gap-3">
               <Link
-                to="/auth/register"
+                to="/register"
                 className="rounded-full bg-[#0077B6] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#005f94]"
               >
                 Get Started

@@ -381,7 +381,7 @@ export default function Register() {
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Link
-          to="/auth/login"
+          to="/login"
           className="inline-flex items-center justify-center rounded-full border border-[#0077B6]/15 bg-white px-5 py-3 text-sm font-semibold text-[#023047] transition hover:border-[#0077B6]/30 hover:bg-[#F7FBFC]"
         >
           Back to Sign In
@@ -746,7 +746,7 @@ export default function Register() {
 
         <div className="flex flex-col items-center justify-between gap-3 rounded-[2rem] border border-white/70 bg-white/70 px-5 py-4 text-sm text-slate-500 shadow-[0_16px_44px_rgba(2,48,71,0.05)] backdrop-blur sm:flex-row">
           <p></p>
-          <Link to="/auth/login" className="font-semibold text-[#0077B6] transition hover:text-[#005f94]">
+          <Link to="/login" className="font-semibold text-[#0077B6] transition hover:text-[#005f94]">
             Already have an account? Sign In
           </Link>
         </div>
