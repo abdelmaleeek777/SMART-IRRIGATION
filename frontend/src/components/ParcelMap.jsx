@@ -1,7 +1,8 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { EditControl } from 'react-leaflet-draw';
-import { FeatureGroup, MapContainer, Polygon, TileLayer } from 'react-leaflet';
+import { FeatureGroup, MapContainer, TileLayer } from 'react-leaflet';
 import * as turf from '@turf/turf';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
@@ -40,10 +41,45 @@ function extractPolygonData(layer) {
 
 export default function ParcelMap({ value, onChange, onClear }) {
   const featureGroupRef = useRef(null);
+  // Track the layer we drew/edited so we don't blow it away when `value` echoes back
+  const activeLayerRef = useRef(null);
 
-  const polygonPositions = useMemo(
-    () => value?.polygon?.map(([latitude, longitude]) => [latitude, longitude]) ?? [],
-    [value],
+  const drawOptions = useMemo(
+    () => ({
+      polyline: false,
+      rectangle: false,
+      circle: false,
+      circlemarker: false,
+      marker: false,
+      polygon: {
+        allowIntersection: false,
+        showArea: true,
+        shapeOptions: {
+          color: '#0077B6',
+          touchextend: false,
+          fillColor: '#00B4D8',
+          fillOpacity: 0.28,
+          weight: 4,
+        },
+      },
+    }),
+    [],
+  );
+
+  const editOptions = useMemo(
+    () => ({
+      edit: {
+        selectedPathOptions: {
+          color: '#0077B6',
+          fillColor: '#00B4D8',
+          fillOpacity: 0.22,
+          dashArray: '8, 8',
+          maintainColor: true,
+        },
+      },
+      remove: true,
+    }),
+    [],
   );
 
   const syncPolygon = (layer) => {
@@ -53,28 +89,48 @@ export default function ParcelMap({ value, onChange, onClear }) {
   };
 
   const handleCreated = (event) => {
-    const featureGroup = featureGroupRef.current;
-    if (!featureGroup) return;
-
-    featureGroup.clearLayers();
-    featureGroup.addLayer(event.layer);
+    activeLayerRef.current = event.layer;
     syncPolygon(event.layer);
   };
 
   const handleEdited = (event) => {
     event.layers.eachLayer((layer) => {
+      activeLayerRef.current = layer;
       syncPolygon(layer);
     });
   };
 
   const handleDeleted = () => {
+    activeLayerRef.current = null;
     onClear();
   };
 
+
+useEffect(() => {
+  const featureGroup = featureGroupRef.current;
+  if (!featureGroup) return;
+
+  if (activeLayerRef.current) {
+    activeLayerRef.current = null;
+    return;
+  }
+
+  featureGroup.clearLayers();
+
+  if (value?.polygon?.length) {
+    const positions = value.polygon.map(([lat, lng]) => [lat, lng]);
+    const layer = L.polygon(positions, {
+      color: '#0077B6',
+      fillColor: '#00B4D8',
+      fillOpacity: 0.28,
+      weight: 3,
+    });
+    featureGroup.addLayer(layer);
+  }
+}, [value?.polygon]); // ✅ only re-run when the polygon itself changes
+
   return (
     <div className="rounded-[2rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl sm:p-5">
-      
-
       <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[#F7FBFC]">
         <div className="pointer-events-none absolute left-4 top-4 z-[401] rounded-2xl bg-white/85 px-4 py-3 text-sm font-semibold text-[#023047] shadow-[0_10px_30px_rgba(2,48,71,0.08)] backdrop-blur">
           Selected Parcel Area
@@ -94,52 +150,17 @@ export default function ParcelMap({ value, onChange, onClear }) {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <FeatureGroup ref={featureGroupRef}>
-            {polygonPositions.length > 0 ? (
-              <Polygon
-                positions={polygonPositions}
-                pathOptions={{ color: '#0077B6', fillColor: '#00B4D8', fillOpacity: 0.28, weight: 3 }}
-              />
-            ) : null}
             <EditControl
               position="topright"
               onCreated={handleCreated}
               onEdited={handleEdited}
               onDeleted={handleDeleted}
-              draw={{
-                polyline: false,
-                rectangle: false,
-                circle: false,
-                circlemarker: false,
-                marker: false,
-                polygon: {
-                  allowIntersection: false,
-                  showArea: true,
-                  shapeOptions: {
-                    color: '#0077B6',
-                    fillColor: '#00B4D8',
-                    fillOpacity: 0.28,
-                    weight: 3,
-                  },
-                },
-              }}
-              edit={{
-                edit: {
-                  selectedPathOptions: {
-                    color: '#0077B6',
-                    fillColor: '#00B4D8',
-                    fillOpacity: 0.22,
-                    dashArray: '8, 8',
-                    maintainColor: true,
-                  },
-                },
-                remove: true,
-              }}
+              draw={drawOptions}
+              edit={editOptions}
             />
           </FeatureGroup>
         </MapContainer>
       </div>
-
-      
     </div>
   );
 }
