@@ -8,6 +8,8 @@ from alembic import context
 from app.database import Base, DATABASE_URL
 from app.models.agriculteur import Agriculteur
 from app.models.email_verification import EmailVerification
+from app.models.exploitation import Exploitation
+from app.models.parcelle import Parcelle
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

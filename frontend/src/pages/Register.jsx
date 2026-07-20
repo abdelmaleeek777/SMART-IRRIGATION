@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import StepIndicator from '../components/StepIndicator';
 import FormInput from '../components/FormInput';
 import FormSelect from '../components/FormSelect';
+import { apiRequest } from '../services/api';
 const ParcelMap = lazy(() => import('../components/ParcelMap'));
 
 const initialFormData = {
@@ -58,6 +59,11 @@ export default function Register() {
   const [verificationStatus, setVerificationStatus] = useState('idle');
   const [verificationMessage, setVerificationMessage] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [creatingExploitation, setCreatingExploitation] = useState(false);
+  const [creatingParcelle, setCreatingParcelle] = useState(false);
+  const [idAgriculteur, setIdAgriculteur] = useState(null);
+  const [idExploitation, setIdExploitation] = useState(null);
   const [verifyingCode, setVerifyingCode] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [registrationPayload, setRegistrationPayload] = useState(null);
@@ -95,6 +101,8 @@ export default function Register() {
       setVerificationMessage('');
       setOtpDigits(Array.from({ length: otpLength }, () => ''));
       setResendCountdown(0);
+      setIdAgriculteur(null);
+      setIdExploitation(null);
     }
   };
 
@@ -177,12 +185,22 @@ export default function Register() {
     setVerificationMessage('');
     setGeneralError('');
 
-    await new Promise((resolve) => window.setTimeout(resolve, 900));
+    try {
+      const response = await apiRequest('/auth/resend-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email: formData.email.trim() }),
+      });
 
-    setSendingCode(false);
-    setVerificationStatus('sent');
-    setVerificationMessage(`A 6-digit verification code was sent to ${formData.email.trim()}.`);
-    setResendCountdown(60);
+      setOtpDigits(Array.from({ length: otpLength }, () => ''));
+      setVerificationStatus('sent');
+      setVerificationMessage(response.message || `A new 6-digit verification code was sent to ${formData.email.trim()}.`);
+      setResendCountdown(60);
+    } catch (error) {
+      setVerificationStatus('idle');
+      setGeneralError(error.message);
+    } finally {
+      setSendingCode(false);
+    }
   };
 
   const moveToStepTwo = async () => {
@@ -190,8 +208,32 @@ export default function Register() {
       return;
     }
 
-    setStep(2);
-    await sendVerificationCode();
+    setRegistering(true);
+    setGeneralError('');
+
+    try {
+      const user = await apiRequest('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          prenom: formData.prenom.trim(),
+          nom: formData.nom.trim(),
+          email: formData.email.trim(),
+          mot_de_passe: formData.password,
+        }),
+      });
+
+      setIdAgriculteur(user.id_agriculteur);
+      setIdExploitation(null);
+      setOtpDigits(Array.from({ length: otpLength }, () => ''));
+      setVerificationStatus('sent');
+      setVerificationMessage(`A 6-digit verification code was sent to ${formData.email.trim()}.`);
+      setResendCountdown(60);
+      setStep(2);
+    } catch (error) {
+      setGeneralError(error.message);
+    } finally {
+      setRegistering(false);
+    }
   };
 
   const handleOtpChange = (index, value) => {
@@ -251,12 +293,25 @@ export default function Register() {
     setVerifyingCode(true);
     setGeneralError('');
 
-    await new Promise((resolve) => window.setTimeout(resolve, 900));
+    try {
+      await apiRequest('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          otp: code,
+        }),
+      });
 
-    setVerifyingCode(false);
-    setEmailVerified(true);
-    setVerificationStatus('verified');
-    setVerificationMessage('Email verified successfully.');
+      setEmailVerified(true);
+      setVerificationStatus('verified');
+      setVerificationMessage('Email verified successfully.');
+    } catch (error) {
+      setEmailVerified(false);
+      setVerificationStatus('sent');
+      setGeneralError(error.message);
+    } finally {
+      setVerifyingCode(false);
+    }
   };
 
   const moveToStepThree = () => {
@@ -269,50 +324,82 @@ export default function Register() {
     setStep(3);
   };
 
-  const moveToStepFour = () => {
+  const moveToStepFour = async () => {
     if (!validateStepThree()) {
       return;
     }
 
-    setGeneralError('');
-    setStep(4);
-  };
-
-  const handleCompleteRegistration = () => {
-    if (!validateStepFour() || !validateStepOne() || !validateStepThree() || !emailVerified) {
-      if (!emailVerified) {
-        setGeneralError('Please verify your email before completing registration');
-      }
+    if (!idAgriculteur) {
+      setGeneralError('Your account information is missing. Please restart registration.');
       return;
     }
 
-    const payload = {
-      agriculteur: {
-        prenom: formData.prenom.trim(),
-        nom: formData.nom.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
-      },
-      exploitation: {
-        nom: formData.exploitationNom.trim(),
-        localisation: formData.localisation.trim(),
-      },
-      parcelle: {
-        nom: formData.parcelleNom.trim(),
-        typeSol: formData.typeSol,
-        typeCulture: formData.typeCulture,
-        superficie: Number(formData.superficie),
-        latitude: Number(formData.latitude),
-        longitude: Number(formData.longitude),
-        polygon: formData.polygon,
-      },
-      emailVerifie: true,
-    };
-
-    setRegistrationPayload(payload);
-    setRegistrationComplete(true);
+    setCreatingExploitation(true);
     setGeneralError('');
-    console.log('WaterWise registration payload', payload);
+
+    try {
+      const exploitation = await apiRequest('/exploitations/', {
+        method: 'POST',
+        body: JSON.stringify({
+          id_agriculteur: idAgriculteur,
+          nom: formData.exploitationNom.trim(),
+          localisation: formData.localisation.trim(),
+        }),
+      });
+
+      setIdExploitation(exploitation.id_exploitation);
+      setStep(4);
+    } catch (error) {
+      setGeneralError(error.message);
+    } finally {
+      setCreatingExploitation(false);
+    }
+  };
+
+  const handleCompleteRegistration = async () => {
+    if (!validateStepFour()) {
+      return;
+    }
+
+    if (!emailVerified) {
+      setGeneralError('Please verify your email before completing registration');
+      return;
+    }
+
+    if (!idExploitation) {
+      setGeneralError('Your exploitation information is missing. Please return to Step 3.');
+      return;
+    }
+
+    setCreatingParcelle(true);
+    setGeneralError('');
+
+    try {
+      const parcelle = await apiRequest('/parcelles/', {
+        method: 'POST',
+        body: JSON.stringify({
+          id_exploitation: idExploitation,
+          nom: formData.parcelleNom.trim(),
+          type_sol: formData.typeSol,
+          type_culture: formData.typeCulture,
+          superficie: Number(formData.superficie),
+          latitude: Number(formData.latitude),
+          longitude: Number(formData.longitude),
+          polygon: formData.polygon,
+        }),
+      });
+
+      setRegistrationPayload({
+        id_agriculteur: idAgriculteur,
+        id_exploitation: idExploitation,
+        parcelle,
+      });
+      setRegistrationComplete(true);
+    } catch (error) {
+      setGeneralError(error.message);
+    } finally {
+      setCreatingParcelle(false);
+    }
   };
 
   const renderStepOne = () => (
@@ -391,10 +478,12 @@ export default function Register() {
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
           onClick={moveToStepTwo}
+          disabled={registering}
           className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0077B6] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(0,119,182,0.24)] transition hover:bg-[#005f94]"
         >
-          Continue
-          <ArrowRight className="h-4 w-4" />
+            {registering ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {registering ? 'Creating account' : 'Continue'}
+            {!registering ? <ArrowRight className="h-4 w-4" /> : null}
         </motion.button>
       </div>
     </div>
@@ -552,27 +641,31 @@ export default function Register() {
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
           onClick={moveToStepFour}
+          disabled={creatingExploitation}
           className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0077B6] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(0,119,182,0.24)] transition hover:bg-[#005f94]"
         >
-          Continue
-          <ArrowRight className="h-4 w-4" />
+            {creatingExploitation ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {creatingExploitation ? 'Creating exploitation' : 'Continue'}
+            {!creatingExploitation ? <ArrowRight className="h-4 w-4" /> : null}
         </motion.button>
       </div>
     </div>
   );
 
   const renderStepFour = () => (
-    <div className="space-y-8">
-      <header className="max-w-2xl">
+    <div className="space-y-6">
+      <header>
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0077B6]">Step 4</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-[#023047] sm:text-4xl">Add Your First Parcel</h1>
-        <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
+        <h1 className="mt-2 text-3xl font-black tracking-tight text-[#023047] sm:text-4xl">Add Your First Parcel</h1>
+        <p className="mt-2 text-sm leading-7 text-slate-600 sm:text-base">
           Provide information about your parcel and select its exact area on the map.
         </p>
       </header>
 
-      <div className="gap-6 flex flex-col-reverse">
-        <div className="space-y-5 rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-[0_12px_36px_rgba(2,48,71,0.06)] backdrop-blur">
+      {/* Two-column split: form left, map right */}
+      <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
+        {/* 鈹€鈹€ Left column: form fields 鈹€鈹€ */}
+        <div className="flex flex-col gap-4 rounded-[1.75rem] border border-white/80 bg-white/80 p-5 shadow-[0_12px_36px_rgba(2,48,71,0.06)] backdrop-blur">
           <FormInput
             label="Parcel Name"
             icon={MapPin}
@@ -612,49 +705,56 @@ export default function Register() {
             ))}
           </FormSelect>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          {/* Auto-calculated fields */}
+          <div className="mt-auto space-y-4 rounded-[1.25rem] border border-[#CAF0F8]/60 bg-[#F7FBFC] p-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+              Map-derived values
+            </p>
             <FormInput
-              label="Surface Area"
+              label="Surface Area (ha)"
               icon={MapPin}
               placeholder="Auto-calculated"
               value={formData.superficie}
               readOnly
               error={errors.superficie}
-              inputClassName="bg-[#F7FBFC]"
+              inputClassName="bg-white"
             />
-            
+            <div className="grid grid-cols-2 gap-3">
+              <FormInput
+                label="Latitude"
+                icon={MapPin}
+                value={formData.latitude}
+                onChange={updateField('latitude')}
+                placeholder="e.g. 30.4278"
+                error={errors.latitude}
+                inputClassName="bg-white"
+              />
+              <FormInput
+                label="Longitude"
+                icon={MapPin}
+                value={formData.longitude}
+                onChange={updateField('longitude')}
+                placeholder="e.g. -9.5981"
+                error={errors.longitude}
+                inputClassName="bg-white"
+              />
+            </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FormInput
-              label="Latitude"
-              icon={MapPin}
-              value={formData.latitude}
-              readOnly
-              placeholder="Latitude"
-              error={errors.latitude}
-              inputClassName="bg-[#F7FBFC]"
-            />
-            <FormInput
-              label="Longitude"
-              icon={MapPin}
-              value={formData.longitude}
-              readOnly
-              placeholder="Longitude"
-              error={errors.longitude}
-              inputClassName="bg-[#F7FBFC]"
-            />
-          </div>
-
-          {errors.polygon ? <p className="text-sm font-medium text-rose-600">{errors.polygon}</p> : null}
+          {errors.polygon ? (
+            <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600">
+              {errors.polygon}
+            </p>
+          ) : null}
         </div>
 
+        {/* 鈹€鈹€ Right column: map 鈹€鈹€ */}
         <Suspense
           fallback={
-            <div className="flex min-h-[420px] items-center justify-center rounded-[2rem] border border-white/80 bg-white/75 p-5 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl sm:min-h-[520px]">
+            <div className="flex min-h-[480px] items-center justify-center rounded-[1.75rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl">
               <div className="flex items-center gap-3 rounded-2xl bg-[#CAF0F8]/70 px-4 py-3 text-sm font-semibold text-[#023047]">
                 <Loader2 className="h-4 w-4 animate-spin text-[#0077B6]" />
-                Loading parcel map
+                Loading parcel map鈥?
               </div>
             </div>
           }
@@ -667,6 +767,7 @@ export default function Register() {
         </Suspense>
       </div>
 
+      {/* Navigation */}
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         <button
           type="button"
@@ -682,9 +783,11 @@ export default function Register() {
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleCompleteRegistration}
+          disabled={creatingParcelle}
           className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0077B6] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(0,119,182,0.24)] transition hover:bg-[#005f94]"
         >
-          Complete Registration
+          {creatingParcelle ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {creatingParcelle ? 'Creating parcel' : 'Complete Registration'}
         </motion.button>
       </div>
 
@@ -697,9 +800,9 @@ export default function Register() {
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <p className="font-semibold">Registration payload prepared for FastAPI</p>
+              <p className="font-semibold">Registration completed successfully</p>
               <p className="mt-1 text-emerald-700">
-                The Agriculteur, Exploitation, and Parcelle data are now stored in React state and ready to be sent to the backend.
+                Your account, exploitation, and first parcel have been created.
               </p>
             </div>
           </div>

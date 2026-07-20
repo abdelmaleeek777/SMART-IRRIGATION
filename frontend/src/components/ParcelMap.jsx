@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { EditControl } from 'react-leaflet-draw';
-import { FeatureGroup, MapContainer, TileLayer } from 'react-leaflet';
+import { FeatureGroup, MapContainer, TileLayer, useMap } from 'react-leaflet';
 import * as turf from '@turf/turf';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -8,14 +8,43 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 
 const DEFAULT_CENTER = [30.4278, -9.5981];
 
+const DRAW_OPTIONS = {
+  polyline: false,
+  rectangle: false,
+  circle: false,
+  circlemarker: false,
+  marker: false,
+  polygon: {
+    allowIntersection: false,
+    showArea: false,
+    shapeOptions: {
+      color: '#0077B6',
+      fillColor: '#00B4D8',
+      fillOpacity: 0.28,
+      weight: 3,
+    },
+  },
+};
+
+const EDIT_OPTIONS = {
+  edit: {
+    selectedPathOptions: {
+      color: '#0077B6',
+      fillColor: '#00B4D8',
+      fillOpacity: 0.22,
+      dashArray: '8, 8',
+      maintainColor: true,
+    },
+  },
+  remove: true,
+};
+
 function normalizeCoords(latlngs) {
-  const coords = latlngs.map((point) => [point.lng, point.lat]);
+  const coords = latlngs.map((p) => [p.lng, p.lat]);
   if (coords.length > 0) {
-    const [firstLng, firstLat] = coords[0];
-    const [lastLng, lastLat] = coords[coords.length - 1];
-    if (firstLng !== lastLng || firstLat !== lastLat) {
-      coords.push([firstLng, firstLat]);
-    }
+    const [fLng, fLat] = coords[0];
+    const [lLng, lLat] = coords[coords.length - 1];
+    if (fLng !== lLng || fLat !== lLat) coords.push([fLng, fLat]);
   }
   return coords;
 }
@@ -23,101 +52,68 @@ function normalizeCoords(latlngs) {
 function extractPolygonData(layer) {
   const latlngs = layer.getLatLngs()?.[0] ?? [];
   const coords = normalizeCoords(latlngs);
-  if (coords.length < 4) {
-    return null;
-  }
+  if (coords.length < 4) return null;
 
   const polygon = turf.polygon([coords]);
-  const areaSquareMeters = turf.area(polygon);
+  const areaM2 = turf.area(polygon);
   const centroid = turf.centroid(polygon).geometry.coordinates;
 
   return {
-    polygon: coords.map(([longitude, latitude]) => [latitude, longitude]),
-    superficie: (areaSquareMeters / 10000).toFixed(2),
+    polygon: coords.map(([lng, lat]) => [lat, lng]),
+    superficie: (areaM2 / 10000).toFixed(2),
     latitude: centroid[1].toFixed(6),
     longitude: centroid[0].toFixed(6),
   };
 }
 
-export default function ParcelMap({ value, onChange, onClear }) {
-  const featureGroupRef = useRef(null);
-  // Track the layer we drew/edited so we don't blow it away when `value` echoes back
-  const activeLayerRef = useRef(null);
+/* Inner component — runs inside MapContainer so useMap() works */
+function DrawControls({ featureGroupRef, onChange, onClear }) {
+  // Ensure the map is ready (useMap throws if called outside MapContainer)
+  useMap();
 
-  const drawOptions = useMemo(
-    () => ({
-      polyline: false,
-      rectangle: false,
-      circle: false,
-      circlemarker: false,
-      marker: false,
-      polygon: {
-        allowIntersection: false,
-        showArea: true,
-        shapeOptions: {
-          color: '#0077B6',
-          touchextend: false,
-          fillColor: '#00B4D8',
-          fillOpacity: 0.28,
-          weight: 4,
-        },
-      },
-    }),
-    [],
-  );
-
-  const editOptions = useMemo(
-    () => ({
-      edit: {
-        selectedPathOptions: {
-          color: '#0077B6',
-          fillColor: '#00B4D8',
-          fillOpacity: 0.22,
-          dashArray: '8, 8',
-          maintainColor: true,
-        },
-      },
-      remove: true,
-    }),
-    [],
-  );
-
-  const syncPolygon = (layer) => {
-    const data = extractPolygonData(layer);
-    if (!data) return;
-    onChange(data);
+  const handleCreated = (e) => {
+    const data = extractPolygonData(e.layer);
+    if (data) onChange(data);
   };
 
-  const handleCreated = (event) => {
-    activeLayerRef.current = event.layer;
-    syncPolygon(event.layer);
-  };
-
-  const handleEdited = (event) => {
-    event.layers.eachLayer((layer) => {
-      activeLayerRef.current = layer;
-      syncPolygon(layer);
+  const handleEdited = (e) => {
+    e.layers.eachLayer((layer) => {
+      const data = extractPolygonData(layer);
+      if (data) onChange(data);
     });
   };
 
   const handleDeleted = () => {
-    activeLayerRef.current = null;
     onClear();
   };
 
+  return (
+    <FeatureGroup ref={featureGroupRef}>
+      <EditControl
+        position="topright"
+        onCreated={handleCreated}
+        onEdited={handleEdited}
+        onDeleted={handleDeleted}
+        draw={DRAW_OPTIONS}
+        edit={EDIT_OPTIONS}
+      />
+    </FeatureGroup>
+  );
+}
 
-useEffect(() => {
-  const featureGroup = featureGroupRef.current;
-  if (!featureGroup) return;
+export default function ParcelMap({ value, onChange, onClear }) {
+  const featureGroupRef = useRef(null);
+  // Track whether we already synced `value` → map so we don't overwrite user edits
+  const syncedRef = useRef(false);
 
-  if (activeLayerRef.current) {
-    activeLayerRef.current = null;
-    return;
-  }
+  useEffect(() => {
+    const fg = featureGroupRef.current;
+    if (!fg) return;
+    if (!value?.polygon?.length) return;
+    // Only sync once from the parent (e.g. if editing an existing record)
+    if (syncedRef.current) return;
+    syncedRef.current = true;
 
-  featureGroup.clearLayers();
-
-  if (value?.polygon?.length) {
     const positions = value.polygon.map(([lat, lng]) => [lat, lng]);
     const layer = L.polygon(positions, {
       color: '#0077B6',
@@ -125,40 +121,49 @@ useEffect(() => {
       fillOpacity: 0.28,
       weight: 3,
     });
-    featureGroup.addLayer(layer);
-  }
-}, [value?.polygon]); // ✅ only re-run when the polygon itself changes
+    fg.clearLayers();
+    fg.addLayer(layer);
+  }, [value]);
 
   return (
-    <div className="rounded-[2rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl sm:p-5">
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[#F7FBFC]">
-        <div className="pointer-events-none absolute left-4 top-4 z-[401] rounded-2xl bg-white/85 px-4 py-3 text-sm font-semibold text-[#023047] shadow-[0_10px_30px_rgba(2,48,71,0.08)] backdrop-blur">
-          Selected Parcel Area
-          <span className="mt-1 block text-2xl font-black text-[#0077B6]">
-            {value?.superficie ? `${value.superficie} hectares` : '0.00 hectares'}
-          </span>
-          <span className="mt-1 block text-xs font-medium text-slate-500">
-            {value?.latitude && value?.longitude
-              ? `Lat ${value.latitude} · Lng ${value.longitude}`
-              : 'Draw a polygon to calculate area and coordinates'}
-          </span>
+    <div className="flex flex-col rounded-[1.75rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl overflow-hidden min-h-[480px]">
+      {/* Top bar */}
+      <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-5 py-3 backdrop-blur">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Selected Parcel Area</p>
+          <p className="text-2xl font-black text-[#0077B6]">
+            {value?.superficie ? `${value.superficie} ha` : '0.00 ha'}
+          </p>
         </div>
+        <div className="text-right">
+          <p className="text-xs font-medium text-slate-500">
+            {value?.latitude && value?.longitude
+              ? `Lat ${value.latitude}`
+              : 'Draw a polygon'}
+          </p>
+          <p className="text-xs font-medium text-slate-500">
+            {value?.longitude ? `Lng ${value.longitude}` : 'to calculate area'}
+          </p>
+        </div>
+      </div>
 
-        <MapContainer center={DEFAULT_CENTER} zoom={8} scrollWheelZoom className="h-[300px] w-full sm:h-[420px]">
+      {/* Map fills remaining height */}
+      <div className="relative flex-1" style={{ minHeight: 380 }}>
+        <MapContainer
+          center={DEFAULT_CENTER}
+          zoom={8}
+          scrollWheelZoom
+          style={{ height: '100%', width: '100%', minHeight: 380 }}
+        >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <FeatureGroup ref={featureGroupRef}>
-            <EditControl
-              position="topright"
-              onCreated={handleCreated}
-              onEdited={handleEdited}
-              onDeleted={handleDeleted}
-              draw={drawOptions}
-              edit={editOptions}
-            />
-          </FeatureGroup>
+          <DrawControls
+            featureGroupRef={featureGroupRef}
+            onChange={onChange}
+            onClear={onClear}
+          />
         </MapContainer>
       </div>
     </div>

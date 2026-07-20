@@ -15,7 +15,7 @@ from app.dependencies import get_db
 from app.core.otp import generate_otp
 from app.models.email_verification import EmailVerification
 from app.services.email_service import send_email_verification
-from app.schemas.verify_email import EmailVerificationRequest
+from app.schemas.verify_email import EmailVerificationRequest, ResendOtpRequest
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 
 
@@ -138,7 +138,7 @@ def verify_email(
 
 @router.post("/resend-otp")
 def resend_otp(
-    data: EmailVerificationRequest,
+    data: ResendOtpRequest,
     db: Session = Depends(get_db)
 ):
     # 1. Find the agriculteur
