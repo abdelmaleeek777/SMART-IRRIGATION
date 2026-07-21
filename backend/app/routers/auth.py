@@ -9,13 +9,16 @@ from fastapi import APIRouter, Depends, HTTPException
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 from app.models.agriculteur import Agriculteur
-from app.schemas.agriculteur import AgriculteurCreate, AgriculteurReponse
+from app.schemas.agriculteur import AgriculteurCreate, AgriculteurReponse, AgriculteurMe
 from app.core import security
 from app.dependencies import get_db
 from app.core.otp import generate_otp
 from app.models.email_verification import EmailVerification
 from app.services.email_service import send_email_verification
 from app.schemas.verify_email import EmailVerificationRequest, ResendOtpRequest
+from app.schemas.agriculteur import TokenResponse, LoginRequest
+from app.dependencies import get_current_user
+
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 
 
@@ -201,4 +204,52 @@ def resend_otp(
 
     return {
         "message": "A new verification code has been sent"
+    }
+
+@router.post("/login", response_model=TokenResponse)
+def login(data: LoginRequest,
+          db: Session = Depends(get_db)):
+    agriculteur = (
+        db.query(Agriculteur)
+        .filter(Agriculteur.email == data.email)
+        .first()
+    )
+
+    if not agriculteur:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+    
+    if not security.verify_password(data.mot_de_passe, agriculteur.mot_de_passe):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+    
+    if not agriculteur.email_verifie:
+        raise HTTPException(
+            status_code=403,
+            detail="Email not verified. Please verify your email before logging in."
+        )
+    
+    access_token = security.create_access_token({
+        "sub": str(agriculteur.id_agriculteur),
+    })
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+
+@router.get("/me", response_model=AgriculteurMe)
+def get_me(
+    current_user: Agriculteur = Depends(get_current_user)
+):
+    return {
+        "id_agriculteur": current_user.id_agriculteur,
+        "nom": current_user.nom,
+        "prenom": current_user.prenom,
+        "email": current_user.email,
+        "email_verifie": current_user.email_verifie,
     }

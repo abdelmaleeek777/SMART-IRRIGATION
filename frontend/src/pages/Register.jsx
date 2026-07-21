@@ -296,11 +296,13 @@ export default function Register() {
     try {
       await apiRequest('/auth/verify-email', {
         method: 'POST',
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          otp: code,
-        }),
+        body: JSON.stringify({ email: formData.email.trim(), otp: code }),
       });
+      const login = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: formData.email.trim(), mot_de_passe: formData.password }),
+      });
+      window.localStorage.setItem('access_token', login.access_token);
 
       setEmailVerified(true);
       setVerificationStatus('verified');
@@ -329,11 +331,6 @@ export default function Register() {
       return;
     }
 
-    if (!idAgriculteur) {
-      setGeneralError('Your account information is missing. Please restart registration.');
-      return;
-    }
-
     setCreatingExploitation(true);
     setGeneralError('');
 
@@ -341,7 +338,6 @@ export default function Register() {
       const exploitation = await apiRequest('/exploitations/', {
         method: 'POST',
         body: JSON.stringify({
-          id_agriculteur: idAgriculteur,
           nom: formData.exploitationNom.trim(),
           localisation: formData.localisation.trim(),
         }),
@@ -754,7 +750,7 @@ export default function Register() {
             <div className="flex min-h-[480px] items-center justify-center rounded-[1.75rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl">
               <div className="flex items-center gap-3 rounded-2xl bg-[#CAF0F8]/70 px-4 py-3 text-sm font-semibold text-[#023047]">
                 <Loader2 className="h-4 w-4 animate-spin text-[#0077B6]" />
-                Loading parcel mapéˆ¥?
+                Loading parcel mapéˆ?
               </div>
             </div>
           }
@@ -857,3 +853,5 @@ export default function Register() {
     </div>
   );
 }
+
+

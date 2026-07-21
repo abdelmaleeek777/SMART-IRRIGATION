@@ -1,9 +1,6 @@
-from pydantic import EmailStr
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import EmailStr, BaseModel, Field
 
 
-# Data received from the frontend
 class AgriculteurCreate(BaseModel):
     nom: str = Field(min_length=2, max_length=50)
     prenom: str = Field(min_length=2, max_length=50)
@@ -11,9 +8,23 @@ class AgriculteurCreate(BaseModel):
     mot_de_passe: str = Field(min_length=8, max_length=50)
 
 
-# Data returned to the frontend
 class AgriculteurReponse(BaseModel):
     id_agriculteur: int
     nom: str
     prenom: str
     email: EmailStr
+    model_config = {"from_attributes": True}
+
+
+class AgriculteurMe(AgriculteurReponse):
+    email_verifie: bool
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    mot_de_passe: str = Field(min_length=8, max_length=50)
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

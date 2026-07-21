@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { logout } from '../../services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   BrainCircuit,
@@ -142,6 +143,8 @@ function SidebarPanel({ onNavigate }) {
 
       <div className="relative mt-auto pt-5">
         <motion.button
+          type="button"
+          onClick={logout}
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.99 }}
           className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/12 px-4 py-3 text-sm font-medium text-white shadow-[0_8px_22px_rgba(2,48,71,0.14)] backdrop-blur transition hover:bg-white/18"
@@ -211,3 +214,6 @@ export default function Sidebar() {
     </>
   );
 }
+
+
+

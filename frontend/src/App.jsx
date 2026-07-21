@@ -7,6 +7,7 @@ import Exploitations from './pages/Exploitations';
 import Parcels from './pages/Parcels';
 import Recommendations from './pages/Recommendations';
 import Register from './pages/Register';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
@@ -14,11 +15,13 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route element={<AppShell />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/exploitations" element={<Exploitations />} />
-        <Route path="/parcels" element={<Parcels />} />
-        <Route path="/recommendations" element={<Recommendations />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/exploitations" element={<Exploitations />} />
+          <Route path="/parcels" element={<Parcels />} />
+          <Route path="/recommendations" element={<Recommendations />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
