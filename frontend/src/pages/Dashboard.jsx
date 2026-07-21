@@ -13,7 +13,7 @@ import {
   AreaChart,
 } from 'recharts';
 import { AnimatePresence, motion } from 'framer-motion';
-import { weatherHistory, irrigationHistory, weatherHighlights } from '../data/mock';
+import { irrigationHistory, weatherHighlights } from '../data/mock';
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../services/api';
 
@@ -26,7 +26,7 @@ function TemperatureTooltip({ active, payload }) {
     <div className="rounded-2xl border border-iceBlue bg-white px-4 py-3 shadow-[0_14px_30px_rgba(2,48,71,0.12)]">
       <p className="text-sm font-semibold text-midnight">{item.fullDate}</p>
       <p className="mt-2 text-sm text-oceanBlue">
-        Température: <span className="font-semibold text-midnight">{ }°C</span>
+        Température: <span className="font-semibold text-midnight">{item.temperature}°C</span>
       </p>
     </div>
   );
@@ -167,7 +167,7 @@ export default function Dashboard() {
 
         return parcelles[nextIndex];
       });
-    }, 60000);
+    }, 10000);
 
     return () => clearInterval(parcelInterval);
 
@@ -188,6 +188,49 @@ export default function Dashboard() {
   });
 
   const [weatherHistoryData, setWeatherHistoryData] = useState([]);
+
+
+  useEffect(() => {
+    if (!selectedParcelle) return;
+
+    const fetchWeatherHistory = async () => {
+      try {
+        const latitude = selectedParcelle.latitude;
+        const longitude = selectedParcelle.longitude;
+
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_max,relative_humidity_2m_min&timezone=auto&past_days=7`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error("Impossible de récupérer l'historique météo");
+        }
+
+        const data = await response.json();
+        const dates = data.daily.time;
+        const last7Days = dates.slice(0, 7)
+        const weatherHistory = last7Days.map((date, index) => {
+          return {
+            date: new Date(date).toLocaleDateString('fr-FR', { weekday: 'short' }),
+            temperature: (data.daily.temperature_2m_max[index] + data.daily.temperature_2m_min[index]) / 2,
+            humidity: (data.daily.relative_humidity_2m_max[index] + data.daily.relative_humidity_2m_min[index]) / 2,
+            fullDate: new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+          }
+        })
+          setWeatherHistoryData(weatherHistory);
+        console.log("Weather History:", data);
+
+      } catch (error) {
+        console.error("Weather history error:", error);
+      }
+    };
+
+    fetchWeatherHistory();
+
+  }, [selectedParcelle]);
+
+
+
 
   return (
     <div className="space-y-8">
@@ -308,7 +351,7 @@ export default function Dashboard() {
 
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weatherHistory} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <AreaChart data={weatherHistoryData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="temperatureGradient" x1="0" y1="0" x2="0" y2="1">
                     {/* Stronger blue at the top */}
@@ -351,7 +394,7 @@ export default function Dashboard() {
 
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weatherHistory} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+              <AreaChart data={weatherHistoryData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
                     {/* Stronger blue at the top */}
