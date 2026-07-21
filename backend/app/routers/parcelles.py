@@ -34,3 +34,25 @@ def create_parcelle(
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code=500, detail="Unable to create parcel")
+
+@router.get("/", response_model=list[ParcelleReponse])
+def get_parcelles(
+    db: Session = Depends(get_db),
+    current_user: Agriculteur = Depends(get_current_user)
+):
+    parcelles = db.query(Parcelle).join(Exploitation).filter(Exploitation.id_agriculteur == current_user.id_agriculteur).all()
+    return parcelles
+
+@router.get("/{parcelle_id}", response_model=ParcelleReponse)
+def get_parcelle(
+    parcelle_id:int,
+    db: Session = Depends(get_db),
+    current_user: Agriculteur = Depends(get_current_user)
+):
+    parcelle = db.query(Parcelle).join(Exploitation).filter(
+        Parcelle.id_parcelle == parcelle_id,
+        Exploitation.id_agriculteur == current_user.id_agriculteur
+    ).first()
+    if parcelle is None:
+        raise HTTPException(status_code=404, detail="Parcelle not found")
+    return parcelle
