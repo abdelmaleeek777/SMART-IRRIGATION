@@ -30,6 +30,26 @@ class ParcelleCreate(BaseModel):
         return value
 
 
+class ParcelleUpdate(BaseModel):
+    id_exploitation: int | None = None
+    nom: str | None = Field(default=None, min_length=1, max_length=100)
+    type_sol: str | None = Field(default=None, min_length=1, max_length=100)
+    type_culture: str | None = Field(default=None, min_length=1, max_length=100)
+    superficie: float | None = Field(default=None, gt=0)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    polygon: Any = None
+
+    @field_validator("nom", "type_sol", "type_culture")
+    @classmethod
+    def validate_non_blank_text(cls, value: str | None) -> str | None:
+        if value is not None:
+            value = value.strip()
+            if not value:
+                raise ValueError("This field must not be empty")
+        return value
+
+
 class ParcelleReponse(BaseModel):
     id_parcelle: int
     id_exploitation: int

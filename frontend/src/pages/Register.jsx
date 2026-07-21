@@ -750,7 +750,7 @@ export default function Register() {
             <div className="flex min-h-[480px] items-center justify-center rounded-[1.75rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl">
               <div className="flex items-center gap-3 rounded-2xl bg-[#CAF0F8]/70 px-4 py-3 text-sm font-semibold text-[#023047]">
                 <Loader2 className="h-4 w-4 animate-spin text-[#0077B6]" />
-                Loading parcel mapéˆ?
+                Loading parcel mapï¿½?
               </div>
             </div>
           }

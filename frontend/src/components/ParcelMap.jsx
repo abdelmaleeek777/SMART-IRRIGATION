@@ -148,7 +148,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
       </div>
 
       {/* Map fills remaining height */}
-      <div className="relative flex-1" style={{ minHeight: 380 }}>
+      {/* <div className="relative flex-1" style={{ minHeight: 380 }}>
         <MapContainer
           center={DEFAULT_CENTER}
           zoom={8}
@@ -159,6 +159,41 @@ export default function ParcelMap({ value, onChange, onClear }) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <DrawControls
+            featureGroupRef={featureGroupRef}
+            onChange={onChange}
+            onClear={onClear}
+          />
+        </MapContainer>
+      </div> */}
+      <div className="relative flex-1" style={{ minHeight: 380 }}>
+        <MapContainer
+          center={DEFAULT_CENTER}
+          zoom={8}
+          scrollWheelZoom
+          style={{
+            height: '100%',
+            width: '100%',
+            minHeight: 380,
+          }}
+        >
+          {/* Satellite map */}
+          <TileLayer
+            attribution="Tiles &copy; Esri"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+
+          {/* <TileLayer
+            attribution="Labels &copy; Esri"
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+          /> */}
+
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+            detectRetina={true}
+          />
+
+          {/* Parcel drawing tools */}
           <DrawControls
             featureGroupRef={featureGroupRef}
             onChange={onChange}
