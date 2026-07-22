@@ -1,16 +1,23 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { LandPlot, Loader2, MapPinned, Plus, Sprout, WifiOff } from 'lucide-react';
-import { apiRequest } from '../services/api';
-import ParcelCard from '../components/parcels/ParcelCard';
-import ParcelFilters from '../components/parcels/ParcelFilters';
-import ParcelDetailsPanel from '../components/parcels/ParcelDetailsPanel';
-import ParcelDeleteModal from '../components/parcels/ParcelDeleteModal';
-import ParcelModal from '../components/parcels/ParcelModal';
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  LandPlot,
+  Loader2,
+  MapPinned,
+  Plus,
+  Sprout,
+  WifiOff,
+} from "lucide-react";
+import { apiRequest } from "../services/api";
+import ParcelCard from "../components/parcels/ParcelCard";
+import ParcelFilters from "../components/parcels/ParcelFilters";
+import ParcelDetailsPanel from "../components/parcels/ParcelDetailsPanel";
+import ParcelDeleteModal from "../components/parcels/ParcelDeleteModal";
+import ParcelModal from "../components/parcels/ParcelModal";
 
 // Lazy-load the map to avoid SSR issues with Leaflet
-const ParcelsMap = lazy(() => import('../components/parcels/ParcelsMap'));
+const ParcelsMap = lazy(() => import("../components/parcels/ParcelsMap"));
 
 /* ─── Animation variants ──────────────────────────────────────────── */
 const pageVariants = {
@@ -51,12 +58,12 @@ function EmptyState({ filtered, onAdd }) {
       </div>
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-oceanBlue">
-          {filtered ? 'Aucun résultat' : 'Aucune parcelle'}
+          {filtered ? "Aucun résultat" : "Aucune parcelle"}
         </p>
         <h3 className="mt-2 text-xl font-bold text-midnight">
           {filtered
-            ? 'Aucune parcelle ne correspond aux filtres.'
-            : 'Vous n\'avez pas encore ajouté de parcelle.'}
+            ? "Aucune parcelle ne correspond aux filtres."
+            : "Vous n'avez pas encore ajouté de parcelle."}
         </h3>
         {!filtered && (
           <p className="mt-2 text-sm text-midnight/55">
@@ -87,21 +94,31 @@ export default function Parcels() {
   const [parcels, setParcels] = useState([]);
   const [exploitations, setExploitations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   /* ── UI state ── */
   const [selectedParcelId, setSelectedParcelId] = useState(null);
-  const [detailsPanel, setDetailsPanel] = useState({ isOpen: false, parcel: null });
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, parcel: null });
-  const [parcelModal, setParcelModal] = useState({ isOpen: false, mode: 'add', parcel: null });
+  const [detailsPanel, setDetailsPanel] = useState({
+    isOpen: false,
+    parcel: null,
+  });
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    parcel: null,
+  });
+  const [parcelModal, setParcelModal] = useState({
+    isOpen: false,
+    mode: "add",
+    parcel: null,
+  });
 
   /* ── Filters ── */
-  const initialExploitationId = searchParams.get('exploitationId') ?? '';
+  const initialExploitationId = searchParams.get("exploitationId") ?? "";
   const [filters, setFilters] = useState({
     exploitationId: initialExploitationId,
-    cropType: '',
-    soilType: '',
-    search: '',
+    cropType: "",
+    soilType: "",
+    search: "",
   });
 
   /* ── Fetch data ── */
@@ -109,15 +126,15 @@ export default function Parcels() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError('');
+        setError("");
         const [parcelData, exploitationData] = await Promise.all([
-          apiRequest('/parcelles/'),
-          apiRequest('/exploitations/'),
+          apiRequest("/parcelles/"),
+          apiRequest("/exploitations/"),
         ]);
         setParcels(parcelData);
         setExploitations(exploitationData);
       } catch (err) {
-        setError(err.message || 'Impossible de charger les données.');
+        setError(err.message || "Impossible de charger les données.");
       } finally {
         setLoading(false);
       }
@@ -136,12 +153,13 @@ export default function Parcels() {
 
   /* ── Derived: unique crop & soil types from actual data ── */
   const cropTypes = useMemo(
-    () => [...new Set(parcels.map((p) => p.type_culture).filter(Boolean))].sort(),
-    [parcels]
+    () =>
+      [...new Set(parcels.map((p) => p.type_culture).filter(Boolean))].sort(),
+    [parcels],
   );
   const soilTypes = useMemo(
     () => [...new Set(parcels.map((p) => p.type_sol).filter(Boolean))].sort(),
-    [parcels]
+    [parcels],
   );
 
   /* ── Filtered parcels ── */
@@ -152,10 +170,7 @@ export default function Parcels() {
         String(parcel.id_exploitation) !== String(filters.exploitationId)
       )
         return false;
-      if (
-        filters.cropType &&
-        parcel.type_culture !== filters.cropType
-      )
+      if (filters.cropType && parcel.type_culture !== filters.cropType)
         return false;
       if (filters.soilType && parcel.type_sol !== filters.soilType)
         return false;
@@ -170,39 +185,44 @@ export default function Parcels() {
 
   /* ── Handlers ── */
   const openAddModal = () => {
-    setParcelModal({ isOpen: true, mode: 'add', parcel: null });
+    setParcelModal({ isOpen: true, mode: "add", parcel: null });
   };
 
   const openEditModal = (parcel) => {
-    setParcelModal({ isOpen: true, mode: 'edit', parcel });
+    setParcelModal({ isOpen: true, mode: "edit", parcel });
   };
 
   const closeParcelModal = () => {
-    setParcelModal({ isOpen: false, mode: 'add', parcel: null });
+    setParcelModal({ isOpen: false, mode: "add", parcel: null });
   };
 
   const handleSaveParcel = async (formData) => {
     try {
-      if (parcelModal.mode === 'edit' && parcelModal.parcel?.id_parcelle) {
-        const updated = await apiRequest(`/parcelles/${parcelModal.parcel.id_parcelle}`, {
-          method: 'PUT',
-          body: JSON.stringify(formData),
-        });
+      if (parcelModal.mode === "edit" && parcelModal.parcel?.id_parcelle) {
+        const updated = await apiRequest(
+          `/parcelles/${parcelModal.parcel.id_parcelle}`,
+          {
+            method: "PUT",
+            body: JSON.stringify(formData),
+          },
+        );
         setParcels((current) =>
           current.map((p) =>
-            p.id_parcelle === parcelModal.parcel.id_parcelle ? { ...p, ...updated } : p
-          )
+            p.id_parcelle === parcelModal.parcel.id_parcelle
+              ? { ...p, ...updated }
+              : p,
+          ),
         );
       } else {
-        const created = await apiRequest('/parcelles/', {
-          method: 'POST',
+        const created = await apiRequest("/parcelles/", {
+          method: "POST",
           body: JSON.stringify(formData),
         });
         setParcels((current) => [...current, created]);
       }
       closeParcelModal();
     } catch (err) {
-      console.error('Error saving parcel:', err);
+      console.error("Error saving parcel:", err);
     }
   };
 
@@ -226,13 +246,13 @@ export default function Parcels() {
     if (!deleteModal.parcel) return;
     const idToDelete = deleteModal.parcel.id_parcelle;
     try {
-      await apiRequest(`/parcelles/${idToDelete}`, { method: 'DELETE' });
+      await apiRequest(`/parcelles/${idToDelete}`, { method: "DELETE" });
       setParcels((current) =>
-        current.filter((p) => p.id_parcelle !== idToDelete)
+        current.filter((p) => p.id_parcelle !== idToDelete),
       );
       if (selectedParcelId === idToDelete) setSelectedParcelId(null);
     } catch (err) {
-      console.error('Error deleting parcel:', err);
+      console.error("Error deleting parcel:", err);
     } finally {
       closeDeleteModal();
     }
@@ -241,7 +261,7 @@ export default function Parcels() {
   /* ── Stats ── */
   const totalSurface = useMemo(
     () => parcels.reduce((sum, p) => sum + Number(p.superficie || 0), 0),
-    [parcels]
+    [parcels],
   );
 
   /* ═══════════════════════════════════════════════════════════════ */
@@ -286,20 +306,23 @@ export default function Parcels() {
       </motion.section>
 
       {/* ── Stats mini-cards ── */}
-      <motion.section variants={itemVariants} className="grid gap-4 md:grid-cols-3">
+      <motion.section
+        variants={itemVariants}
+        className="grid gap-4 md:grid-cols-3"
+      >
         {[
           {
-            label: 'Exploitations',
+            label: "Exploitations",
             value: exploitations.length,
             icon: Sprout,
           },
           {
-            label: 'Parcelles',
+            label: "Parcelles",
             value: parcels.length,
             icon: MapPinned,
           },
           {
-            label: 'Surface totale',
+            label: "Surface totale",
             value: `${totalSurface.toFixed(1)} ha`,
             icon: LandPlot,
           },
@@ -308,15 +331,20 @@ export default function Parcels() {
           return (
             <div
               key={card.label}
-              className="rounded-3xl border border-iceBlue bg-arcticWhite p-5 shadow-[0_16px_40px_rgba(2,48,71,0.07)]"
+              className="relative overflow-hidden rounded-3xl border border-iceBlue bg-arcticWhite/95 p-5 shadow-[0_16px_40px_rgba(2,48,71,0.07)] backdrop-blur"
             >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-midnight/60">{card.label}</p>
-                  <p className="mt-2 text-3xl font-bold text-midnight">{card.value}</p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-iceBlue text-oceanBlue">
-                  <Icon className="h-5 w-5" />
+              <div className="relative z-10 space-y-2">
+                <p className="text-sm font-medium text-midnight/60">
+                  {card.label}
+                </p>
+                <p className="text-3xl font-bold text-midnight leading-none">
+                  {card.value}
+                </p>
+              </div>
+
+              <div className="pointer-events-none absolute -bottom-4 -right-4 opacity-40">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#e0f2fe]/20 rotate-[-14deg]">
+                  <Icon className="h-12 w-12 text-oceanBlue" />
                 </div>
               </div>
             </div>
@@ -359,7 +387,9 @@ export default function Parcels() {
             <WifiOff className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-red-600">Erreur de chargement</p>
+            <p className="text-sm font-semibold text-red-600">
+              Erreur de chargement
+            </p>
             <p className="mt-1 text-sm text-red-500">{error}</p>
           </div>
         </motion.div>
@@ -383,7 +413,8 @@ export default function Parcels() {
           </div>
 
           {/* RIGHT — Parcel list (natural height, scrolls with page) */}
-          <div className="flex flex-col rounded-3xl border border-iceBlue bg-arcticWhite shadow-[0_18px_60px_rgba(2,48,71,0.08)]">
+          <div className="flex h-[600px] flex-col overflow-hidden rounded-3xl border border-iceBlue bg-arcticWhite shadow-[0_18px_60px_rgba(2,48,71,0.08)]">
+            {" "}
             {/* List header */}
             <div className="flex shrink-0 items-center justify-between border-b border-iceBlue px-5 py-4">
               <div>
@@ -400,9 +431,9 @@ export default function Parcels() {
                 </span>
               )}
             </div>
-
             {/* Card list — grows naturally */}
-            <div className="p-4">
+            {/* Only parcel cards scroll */}
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
               {filteredParcels.length === 0 ? (
                 <EmptyState
                   filtered={parcels.length > 0}

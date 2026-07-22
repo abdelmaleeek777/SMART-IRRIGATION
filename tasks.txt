@@ -19,20 +19,20 @@ Login + JWT 🔐
         ↓
 
 Dashboard 📊
-├── GET user's exploitation
-├── GET user's parcels
-├── Calculate total surface from parcels
-└── Display real database data
+├── GET user's exploitation✅
+├── GET user's parcels✅
+├── Calculate total surface from parcels✅
+└── Display real database data✅
 
         ↓
 
 Weather 🌦️
-├── Connect Open-Meteo
-├── Use parcel latitude/longitude
-├── Current temperature
-├── Humidity
-├── Rain
-└── Weather forecast
+├── Connect Open-Meteo✅
+├── Use parcel latitude/longitude✅
+├── Current temperature✅
+├── Humidity✅
+├── Rain✅
+└── Weather forecast✅
 
         ↓
 
