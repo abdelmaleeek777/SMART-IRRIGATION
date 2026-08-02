@@ -275,82 +275,79 @@ export default function Parcels() {
       animate="show"
       className="space-y-6"
     >
-      {/* ── Header ── */}
-      <motion.section
-        variants={itemVariants}
-        className="flex flex-col gap-4 rounded-3xl border border-iceBlue bg-arcticWhite p-6 shadow-[0_18px_60px_rgba(2,48,71,0.08)] lg:flex-row lg:items-end lg:justify-between"
-      >
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-oceanBlue">
-            Gestion des parcelles
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-midnight">
-            Vos parcelles agricoles
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-midnight/65">
-            Visualisez et gérez l'ensemble de vos parcelles agricoles.
-          </p>
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          type="button"
-          id="add-parcel-header"
-          onClick={openAddModal}
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-oceanBlue px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(0,119,182,0.22)] transition"
+      {/* ── Header & Stats Wrapper ── */}
+      <section className="relative flex flex-col border border-aquaBlue/20 rounded-3xl mb-8 p-4 bg-white/40 backdrop-blur-md">
+        {/* ── Header ── */}
+        <motion.section
+          variants={itemVariants}
+          className="flex flex-col gap-5 rounded-3xl pb-6 lg:flex-row lg:items-end lg:justify-between"
         >
-          <Plus className="h-4 w-4" />
-          Ajouter une parcelle
-        </motion.button>
-      </motion.section>
+          <div>
+            <h1 className="mt-2 text-3xl font-semibold text-cyan-700">
+              Vos parcelles agricoles
+            </h1>
+          </div>
 
-      {/* ── Stats mini-cards ── */}
-      <motion.section
-        variants={itemVariants}
-        className="grid gap-4 md:grid-cols-3"
-      >
-        {[
-          {
-            label: "Exploitations",
-            value: exploitations.length,
-            icon: Sprout,
-          },
-          {
-            label: "Parcelles",
-            value: parcels.length,
-            icon: MapPinned,
-          },
-          {
-            label: "Surface totale",
-            value: `${totalSurface.toFixed(1)} ha`,
-            icon: LandPlot,
-          },
-        ].map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.label}
-              className="relative overflow-hidden rounded-3xl border border-iceBlue bg-arcticWhite/95 p-5 shadow-[0_16px_40px_rgba(2,48,71,0.07)] backdrop-blur"
-            >
-              <div className="relative z-10 space-y-2">
-                <p className="text-sm font-medium text-midnight/60">
-                  {card.label}
-                </p>
-                <p className="text-3xl font-bold text-midnight leading-none">
-                  {card.value}
-                </p>
-              </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            id="add-parcel-header"
+            onClick={openAddModal}
+            className="inline-flex absolute right-5 top-4 items-center justify-center gap-2 rounded-xl bg-oceanBlue px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(0,119,182,0.22)]"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter une parcelle
+          </motion.button>
+        </motion.section>
 
-              <div className="pointer-events-none absolute -bottom-4 -right-4 opacity-40">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#e0f2fe]/20 rotate-[-14deg]">
-                  <Icon className="h-12 w-12 text-oceanBlue" />
+        {/* ── Stats mini-cards ── */}
+        <motion.section
+          variants={itemVariants}
+          className="grid gap-4 md:grid-cols-3"
+        >
+          {[
+            {
+              label: "Exploitations",
+              value: exploitations.length,
+              icon: Sprout,
+            },
+            {
+              label: "Parcelles",
+              value: parcels.length,
+              icon: MapPinned,
+            },
+            {
+              label: "Surface totale",
+              value: `${totalSurface.toFixed(1)} ha`,
+              icon: LandPlot,
+            },
+          ].map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.label}
+                className="relative overflow-hidden rounded-3xl border border-iceBlue bg-arcticWhite/95 p-5 shadow-[0_16px_40px_rgba(2,48,71,0.07)] backdrop-blur"
+              >
+                <div className="relative z-10 space-y-2">
+                  <p className="text-sm font-medium text-midnight/60">
+                    {card.label}
+                  </p>
+                  <p className="text-3xl font-bold text-midnight leading-none">
+                    {card.value}
+                  </p>
+                </div>
+
+                <div className="pointer-events-none absolute -bottom-4 -right-4 opacity-40">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#e0f2fe] to-[#e0f2fe]/20 rotate-[-14deg]">
+                    <Icon className="h-12 w-12 text-oceanBlue" />
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </motion.section>
+            );
+          })}
+        </motion.section>
+      </section>
 
       {/* ── Filters ── */}
       <motion.section

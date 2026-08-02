@@ -50,7 +50,7 @@ export default function ParcelDetailsPanel({
           <motion.div
             initial={{ x: 0, opacity: 0.8 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "100%", opacity: 0.8 }}
+            exit={{ opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed left-48 top-14 z-[9999] rounded-3xl flex h-[85vh] w-full max-w-5xl flex-col overflow-y-auto border-l border-iceBlue bg-arcticWhite shadow-[0_0_80px_rgba(2,48,71,0.18)]"
           >

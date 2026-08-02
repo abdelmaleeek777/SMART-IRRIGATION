@@ -1,0 +1,20 @@
+Soil_Type✅
+
+Temperature_C✅
+Humidity✅
+Rainfall_mm✅
+Wind_Speed_kmh✅
+Field_Area_hectare✅
+Crop_Type✅
+
+TO ADD :
+Soil_Moisture :before predectin the agriculter write the value
+
+form:
+Organic_Carbon✅
+Irrigation_Type✅
+Crop_Growth_Stage✅
+Soil_pH✅
+
+open-meteo:
+Sunlight_Hours✅ 

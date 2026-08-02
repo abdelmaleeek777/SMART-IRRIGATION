@@ -104,7 +104,7 @@ function SidebarPanel({ onNavigate }) {
                 className={({ isActive }) =>
                   [
                     'group relative block overflow-hidden rounded-2xl px-3 py-3 text-sm font-medium transition-colors',
-                    isActive ? 'text-[#023047]' : 'text-cyan-50/95 hover:text-white',
+                    isActive ? 'text-[#023047]' : 'text-cyan-50/95 hover:text-white hover:cursor-pointer',
                   ].join(' ')
                 }
               >
@@ -124,8 +124,8 @@ function SidebarPanel({ onNavigate }) {
                       whileHover={{ x: 4 }}
                       transition={{ duration: 0.2 }}
                       className={[
-                        'relative z-10 flex items-center gap-3 rounded-xl px-2 py-0.5',
-                         'group-hover:bg-white/10  '
+                        'relative z-10 flex items-center gap-3 rounded-5xl px-2 py-0.5',
+                         
                       ].join(' ')}
                     >
                       <motion.div whileHover={{ scale: 1.08 }} transition={{ duration: 0.2 }}>
