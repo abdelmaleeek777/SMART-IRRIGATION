@@ -128,7 +128,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
   return (
     <div className="flex flex-col rounded-[1.75rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl overflow-hidden min-h-[480px]">
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-5 py-3 backdrop-blur">
+      {/* <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-5 py-3 backdrop-blur">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Selected Parcel Area</p>
           <p className="text-2xl font-black text-[#0077B6]">
@@ -145,7 +145,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
             {value?.longitude ? `Lng ${value.longitude}` : 'to calculate area'}
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Map fills remaining height */}
       {/* <div className="relative flex-1" style={{ minHeight: 380 }}>

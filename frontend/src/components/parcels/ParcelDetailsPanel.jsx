@@ -120,6 +120,46 @@ export default function ParcelDetailsPanel({
                     value={parcel.type_sol}
                   />
                   <DetailRow
+                    icon={Droplets}
+                    label="Type d'irrigation"
+                    value={parcel.irrigation_type || "—"}
+                  />
+                  <DetailRow
+                    icon={Sprout}
+                    label="Stade de croissance"
+                    value={parcel.crop_growth_stage || "—"}
+                  />
+                  <DetailRow
+                    icon={Layers}
+                    label="Paillage (Mulching)"
+                    value={
+                      parcel.mulching_used === "Yes"
+                        ? "Oui"
+                        : parcel.mulching_used === "No"
+                          ? "Non"
+                          : "—"
+                    }
+                  />
+                  <DetailRow
+                    icon={LandPlot}
+                    label="Carbone organique"
+                    value={
+                      parcel.organic_carbon !== null &&
+                      parcel.organic_carbon !== undefined
+                        ? Number(parcel.organic_carbon).toFixed(2)
+                        : "—"
+                    }
+                  />
+                  <DetailRow
+                    icon={Layers}
+                    label="pH du sol"
+                    value={
+                      parcel.soil_ph !== null && parcel.soil_ph !== undefined
+                        ? Number(parcel.soil_ph).toFixed(1)
+                        : "—"
+                    }
+                  />
+                  {/* <DetailRow
                     icon={Navigation}
                     label="Latitude"
                     value={
@@ -127,8 +167,7 @@ export default function ParcelDetailsPanel({
                         ? `${Number(parcel.latitude).toFixed(6)}°`
                         : "—"
                     }
-                  />
-                  <DetailRow
+                  />  <DetailRow
                     icon={Navigation}
                     label="Longitude"
                     value={
@@ -136,7 +175,7 @@ export default function ParcelDetailsPanel({
                         ? `${Number(parcel.longitude).toFixed(6)}°`
                         : "—"
                     }
-                  />
+                  /> */}
                 </div>
 
                 {/* État d'irrigation — UI placeholder */}

@@ -17,4 +17,4 @@ Crop_Growth_Stage✅
 Soil_pH✅
 
 open-meteo:
-Sunlight_Hours✅ 
+Sunlight_Hours✅

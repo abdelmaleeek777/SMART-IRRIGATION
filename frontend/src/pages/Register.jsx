@@ -50,7 +50,7 @@ function createEmptyErrors() {
 }
 
 export default function Register() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(4);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState(createEmptyErrors);
   const [generalError, setGeneralError] = useState('');

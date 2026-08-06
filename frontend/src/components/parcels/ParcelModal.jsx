@@ -5,8 +5,10 @@ import { createPortal } from 'react-dom';
 
 const ParcelMap = lazy(() => import('../ParcelMap'));
 
-const soilOptions = ['Argileux', 'Limon', 'Sableux', 'Silteux', 'Limon-Argileux', 'Sableux-Limon'];
-const cropOptions = ['Tomate', 'Blé', 'Olivier', 'Agrumes', 'Pastèque', 'Maïs', 'Pomme de terre', 'Autre'];
+const soilOptions = ['Loamy', 'Clay', 'Sandy', 'Silt'];
+const cropOptions = ['Sugarcane', 'Wheat', 'Rice', 'Potato', 'Cotton', 'Maize'];
+const irrigationOptions = ['Drip', 'Rainfed', 'Sprinkler', 'Canal'];
+const growthStageOptions = ['Sowing', 'Vegetative', 'Flowering', 'Harvest'];
 
 const initialForm = {
   id_exploitation: '',
@@ -14,6 +16,11 @@ const initialForm = {
   superficie: '',
   type_culture: 'Tomate',
   type_sol: 'Argileux',
+  organic_carbon: '',
+  soil_ph: '',
+  irrigation_type: 'Drip',
+  crop_growth_stage: 'Sowing',
+  mulching_used: 'No',
   latitude: '30.4278',
   longitude: '-9.5981',
   polygon: null,
@@ -28,6 +35,7 @@ export default function ParcelModal({
   onSubmit,
 }) {
   const [formData, setFormData] = useState(initialForm);
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     if (isOpen) {
@@ -42,6 +50,11 @@ export default function ParcelModal({
           superficie: initialData.superficie !== undefined ? String(initialData.superficie) : '',
           type_culture: initialData.type_culture || 'Tomate',
           type_sol: initialData.type_sol || 'Argileux',
+          organic_carbon: initialData.organic_carbon !== undefined ? String(initialData.organic_carbon) : '',
+          soil_ph: initialData.soil_ph !== undefined ? String(initialData.soil_ph) : '',
+          irrigation_type: initialData.irrigation_type || 'Drip',
+          crop_growth_stage: initialData.crop_growth_stage || 'Sowing',
+          mulching_used: initialData.mulching_used || 'No',
           latitude: initialData.latitude !== undefined ? String(initialData.latitude) : '30.4278',
           longitude: initialData.longitude !== undefined ? String(initialData.longitude) : '-9.5981',
           polygon: initialData.polygon || null,
@@ -53,6 +66,7 @@ export default function ParcelModal({
             ? String(exploitations[0].id_exploitation)
             : '',
         });
+        setFormErrors({});
       }
     }
   }, [isOpen, initialData, exploitations]);
@@ -63,6 +77,7 @@ export default function ParcelModal({
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
+    setFormErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const handleMapChange = (mapData) => {
@@ -88,6 +103,28 @@ export default function ParcelModal({
 
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    const nextErrors = {};
+    const surfaceValue = Number(formData.superficie);
+    const organicCarbonValue = formData.organic_carbon === '' ? null : Number(formData.organic_carbon);
+    const soilPhValue = formData.soil_ph === '' ? null : Number(formData.soil_ph);
+
+    if (!formData.nom.trim()) nextErrors.nom = 'Le nom est requis.';
+    if (!formData.superficie || Number.isNaN(surfaceValue) || surfaceValue <= 0) {
+      nextErrors.superficie = 'La superficie doit être supérieure à 0.';
+    }
+    if (formData.organic_carbon !== '' && (Number.isNaN(organicCarbonValue) || organicCarbonValue < 0)) {
+      nextErrors.organic_carbon = 'La valeur doit être numérique et positive.';
+    }
+    if (formData.soil_ph !== '' && (Number.isNaN(soilPhValue) || soilPhValue < 0 || soilPhValue > 14)) {
+      nextErrors.soil_ph = 'Le pH doit être compris entre 0 et 14.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
+      return;
+    }
+
     const lat = Number(formData.latitude || 30.4278);
     const lng = Number(formData.longitude || -9.5981);
     const delta = 0.002;
@@ -105,6 +142,11 @@ export default function ParcelModal({
       superficie: Number(formData.superficie),
       type_culture: formData.type_culture,
       type_sol: formData.type_sol,
+      organic_carbon: organicCarbonValue,
+      soil_ph: soilPhValue,
+      irrigation_type: formData.irrigation_type,
+      crop_growth_stage: formData.crop_growth_stage,
+      mulching_used: formData.mulching_used,
       latitude: lat,
       longitude: lng,
       polygon: formData.polygon || defaultPolygon,
@@ -314,6 +356,99 @@ export default function ParcelModal({
                           />
                         </div>
                       </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-midnight">
+                          Carbone organique
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          name="organic_carbon"
+                          value={formData.organic_carbon}
+                          onChange={handleChange}
+                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
+                          placeholder="0.00"
+                        />
+                        {formErrors.organic_carbon ? (
+                          <p className="mt-1 text-xs text-red-600">{formErrors.organic_carbon}</p>
+                        ) : null}
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-midnight">
+                          pH du sol
+                        </label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="14"
+                          name="soil_ph"
+                          value={formData.soil_ph}
+                          onChange={handleChange}
+                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
+                          placeholder="6.5"
+                        />
+                        {formErrors.soil_ph ? (
+                          <p className="mt-1 text-xs text-red-600">{formErrors.soil_ph}</p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-midnight">
+                          Type d'irrigation
+                        </label>
+                        <select
+                          name="irrigation_type"
+                          value={formData.irrigation_type}
+                          onChange={handleChange}
+                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
+                        >
+                          {irrigationOptions.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-midnight">
+                          Stade de croissance
+                        </label>
+                        <select
+                          name="crop_growth_stage"
+                          value={formData.crop_growth_stage}
+                          onChange={handleChange}
+                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
+                        >
+                          {growthStageOptions.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id="mulching_used"
+                        name="mulching_used"
+                        checked={formData.mulching_used === 'Yes'}
+                        onChange={(e) => {
+                          setFormData((current) => ({
+                            ...current,
+                            mulching_used: e.target.checked ? 'Yes' : 'No',
+                          }));
+                        }}
+                        className="h-4 w-4 rounded border-iceBlue text-oceanBlue focus:ring-aquaBlue"
+                      />
+                      <label htmlFor="mulching_used" className="text-xs font-semibold text-midnight cursor-pointer select-none">
+                        Paillage utilisé (Mulching)
+                      </label>
                     </div>
                   </div>
 

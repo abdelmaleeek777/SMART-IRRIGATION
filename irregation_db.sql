@@ -34,12 +34,30 @@ CREATE TABLE parcelle (
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     superficie FLOAT NOT NULL,
-    type_sol VARCHAR(100),
-    type_culture VARCHAR(100),
     id_exploitation INT NOT NULL,
     CONSTRAINT fk_parcelle_exploitation
         FOREIGN KEY (id_exploitation)
         REFERENCES exploitation(id_exploitation)
+        ON DELETE CASCADE
+);
+
+-- TABLE PARCELLE_PROFILE
+
+CREATE TABLE parcelle_profile (
+    id SERIAL PRIMARY KEY,
+    parcel_id INT NOT NULL UNIQUE,
+    soil_type VARCHAR(100) NOT NULL,
+    crop_type VARCHAR(100) NOT NULL,
+    organic_carbon DOUBLE PRECISION,
+    soil_ph DOUBLE PRECISION,
+    irrigation_type VARCHAR(30),
+    crop_growth_stage VARCHAR(30),
+    mulching_used VARCHAR(10) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_parcelle_profile_parcelle
+        FOREIGN KEY (parcel_id)
+        REFERENCES parcelle(id_parcelle)
         ON DELETE CASCADE
 );
 
