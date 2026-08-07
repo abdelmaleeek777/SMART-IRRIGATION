@@ -32,3 +32,10 @@ class Parcelle(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+
+    # Relationship to prediction history entries (one-to-many)
+    predictions = relationship(
+        "PredictionHistory",
+        back_populates="parcel",
+        cascade="all, delete-orphan",
+    )

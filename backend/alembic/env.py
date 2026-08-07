@@ -11,6 +11,7 @@ from app.models.email_verification import EmailVerification
 from app.models.exploitation import Exploitation
 from app.models.parcelle import Parcelle
 from app.models.parcel_profile import ParcelProfile
+from app.models.recommandation import PredictionHistory
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import auth, exploitations, parcelles
+from app.routers import auth, exploitations, parcelles, recommandations
 from app.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,6 +22,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(exploitations.router)
 app.include_router(parcelles.router)
+app.include_router(recommandations.router)
 
 
 @app.get("/")
