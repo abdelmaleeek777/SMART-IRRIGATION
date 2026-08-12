@@ -21,6 +21,7 @@ from app.schemas.recommandation import (
 
 from app.services.weather_service import get_today_weather
 from app.services.prediction_service import predict_irrigation
+from app.services.irrigation_calculator import calculate_irrigation_requirement
 
 router = APIRouter(prefix="/recommendation", tags=["Recommendation"])
 
@@ -132,6 +133,14 @@ def post_predict(
     )
     
     prediction_upper = prediction_raw.upper() # HIGH, MEDIUM, LOW
+    irrigation = calculate_irrigation_requirement(
+        temperature_c=weather_data["temperature"], humidity=weather_data["humidity"],
+        rainfall_mm=weather_data["rainfall"], wind_speed_kmh=weather_data["wind_speed"],
+        sunlight_hours=weather_data["sunlight_hours"], latitude=parcel.latitude,
+        crop_type=profile.crop_type, crop_growth_stage=profile.crop_growth_stage or "Vegetative",
+        irrigation_type=profile.irrigation_type or "Drip", soil_moisture_percent=req.soil_moisture,
+        field_area_hectare=parcel.superficie, prediction=prediction_upper,
+    )
     
     # Map recommendation messages
     if prediction_upper == "HIGH":
@@ -171,7 +180,8 @@ def post_predict(
         confidence=confidence,
         previous_prediction=prev_prediction_val,
         previous_irrigation=req.previous_irrigation,
-        notification_sent=prediction_changed
+        notification_sent=prediction_changed,
+        **irrigation
     )
     
     try:
@@ -194,6 +204,7 @@ def post_predict(
         previous_irrigation=new_history.previous_irrigation,
         parcel_name=parcel.nom,
         probabilities=probabilities,
+        irrigation=irrigation,
         weather=WeatherInfo(
             temperature=weather_data["temperature"],
             humidity=weather_data["humidity"],
@@ -248,6 +259,10 @@ def get_prediction_history(
             previous_prediction=r.previous_prediction,
             previous_irrigation=r.previous_irrigation,
             predicted_at=r.predicted_at,
-            notification_sent=r.notification_sent
+            notification_sent=r.notification_sent,
+            et0_mm=r.et0_mm, kc=r.kc, etc_mm=r.etc_mm,
+            effective_rainfall_mm=r.effective_rainfall_mm, net_irrigation_mm=r.net_irrigation_mm,
+            irrigation_efficiency=r.irrigation_efficiency, gross_irrigation_mm=r.gross_irrigation_mm,
+            recommended_irrigation_mm=r.recommended_irrigation_mm, recommended_volume_m3=r.recommended_volume_m3
         ) for r in records
     ]

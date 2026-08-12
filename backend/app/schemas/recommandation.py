@@ -15,6 +15,17 @@ class WeatherInfo(BaseModel):
     wind_speed: float
     sunlight_hours: float
 
+class IrrigationInfo(BaseModel):
+    et0_mm: float
+    kc: float
+    etc_mm: float
+    effective_rainfall_mm: float
+    net_irrigation_mm: float
+    irrigation_efficiency: float
+    gross_irrigation_mm: float
+    recommended_irrigation_mm: float
+    recommended_volume_m3: float
+
 class PredictResponse(BaseModel):
     prediction: str
     confidence: float
@@ -25,6 +36,7 @@ class PredictResponse(BaseModel):
     parcel_name: str
     weather: WeatherInfo
     probabilities: Optional[dict] = None
+    irrigation: Optional[IrrigationInfo] = None
 
 class LatestPredictionInfo(BaseModel):
     prediction: str
@@ -61,3 +73,12 @@ class HistoryRecordResponse(BaseModel):
     previous_irrigation: Optional[float] = None
     predicted_at: datetime
     notification_sent: bool
+    et0_mm: Optional[float] = None
+    kc: Optional[float] = None
+    etc_mm: Optional[float] = None
+    effective_rainfall_mm: Optional[float] = None
+    net_irrigation_mm: Optional[float] = None
+    irrigation_efficiency: Optional[float] = None
+    gross_irrigation_mm: Optional[float] = None
+    recommended_irrigation_mm: Optional[float] = None
+    recommended_volume_m3: Optional[float] = None

@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, MapPin, X } from 'lucide-react';
+import { Droplets, Layers, Loader2, MapPin, Sprout, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { FilterDropdown } from './ParcelFilters';
 
 const ParcelMap = lazy(() => import('../ParcelMap'));
 
@@ -156,7 +157,7 @@ export default function ParcelModal({
   return createPortal(
     <AnimatePresence>
       {isOpen ? (
-        <motion.div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <motion.div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden p-3 sm:p-5">
           {/* Backdrop */}
           <motion.button
             type="button"
@@ -174,18 +175,12 @@ export default function ParcelModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-            className="relative z-10 my-auto w-full max-w-5xl rounded-[2rem] border border-iceBlue bg-arcticWhite p-6 shadow-[0_24px_70px_rgba(2,48,71,0.22)] max-h-[90vh] flex flex-col"
+            className="relative z-10 flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[2rem] border border-iceBlue bg-arcticWhite p-5 shadow-[0_24px_70px_rgba(2,48,71,0.22)] sm:max-h-[calc(100vh-2.5rem)] sm:p-6"
           >
             {/* Header */}
             <div className="flex items-start justify-between gap-4 border-b border-iceBlue pb-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-oceanBlue">
-                  Gestion des parcelles
-                </p>
                 <h3 className="mt-1 text-2xl font-bold text-midnight">{title}</h3>
-                <p className="mt-1 text-xs text-midnight/60">
-                  Dessinez les contours de la parcelle sur la carte pour calculer automatiquement sa superficie.
-                </p>
               </div>
 
               <button
@@ -198,11 +193,11 @@ export default function ParcelModal({
             </div>
 
             {/* Modal Body: 2-column Grid */}
-            <form onSubmit={handleSubmit} className="mt-4 flex flex-1 flex-col overflow-y-auto space-y-4">
-              <div className="grid gap-6 lg:grid-cols-12 flex-1 min-h-0">
+            <form onSubmit={handleSubmit} className="mt-4 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="grid items-start gap-5 lg:grid-cols-12">
                 {/* Left: Map for drawing parcel boundary */}
-                <div className="lg:col-span-7 flex flex-col min-h-[340px]">
-                  <div className="mb-2 flex items-center justify-between">
+                <div className="flex flex-col lg:col-span-7">
+                  <div className="mb-2 flex items-center justify-between [&>span]:hidden">
                     <label className="text-xs font-bold uppercase tracking-wider text-oceanBlue flex items-center gap-1.5">
                       <MapPin className="h-3.5 w-3.5 text-aquaBlue" />
                       Tracez la superficie sur la carte
@@ -210,7 +205,7 @@ export default function ParcelModal({
                     <span className="text-xs text-midnight/50">Utilisez l'outil polygone en haut à droite de la carte</span>
                   </div>
 
-                  <div className="flex-1 rounded-2xl border border-iceBlue overflow-hidden shadow-inner min-h-[320px]">
+                  <div className="h-[420px] overflow-hidden rounded-2xl border border-iceBlue shadow-inner sm:h-[480px]">
                     <Suspense
                       fallback={
                         <div className="flex h-full min-h-[320px] items-center justify-center bg-arcticWhite">
@@ -240,12 +235,23 @@ export default function ParcelModal({
                       <label className="mb-1 block text-xs font-semibold text-midnight">
                         Exploitation agricole
                       </label>
+                      <FilterDropdown
+                        id="form-exploitation"
+                        value={formData.id_exploitation}
+                        onChange={(value) => handleChange({ target: { name: 'id_exploitation', value } })}
+                        ariaLabel="Exploitation agricole"
+                        icon={MapPin}
+                        options={[
+                          { value: '', label: 'Sélectionnez une exploitation' },
+                          ...exploitations.map((ex) => ({ value: String(ex.id_exploitation), label: `${ex.nom} (${ex.localisation})` })),
+                        ]}
+                      />
                       <select
                         name="id_exploitation"
                         value={formData.id_exploitation}
                         onChange={handleChange}
                         required
-                        className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
+                        className="hidden"
                       >
                         <option value="" disabled>Sélectionnez une exploitation</option>
                         {exploitations.map((ex) => (
@@ -293,17 +299,14 @@ export default function ParcelModal({
                         <label className="mb-1 block text-xs font-semibold text-midnight">
                           Culture
                         </label>
-                        <select
-                          name="type_culture"
+                        <FilterDropdown
+                          id="form-crop"
                           value={formData.type_culture}
-                          onChange={handleChange}
-                          required
-                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
-                        >
-                          {cropOptions.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
+                          onChange={(value) => handleChange({ target: { name: 'type_culture', value } })}
+                          ariaLabel="Culture"
+                          options={cropOptions.map((crop) => ({ value: crop, label: crop }))}
+                          icon={Sprout}
+                        />
                       </div>
                     </div>
 
@@ -313,17 +316,14 @@ export default function ParcelModal({
                         <label className="mb-1 block text-xs font-semibold text-midnight">
                           Type de sol
                         </label>
-                        <select
-                          name="type_sol"
+                        <FilterDropdown
+                          id="form-soil"
                           value={formData.type_sol}
-                          onChange={handleChange}
-                          required
-                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
-                        >
-                          {soilOptions.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
+                          onChange={(value) => handleChange({ target: { name: 'type_sol', value } })}
+                          ariaLabel="Type de sol"
+                          options={soilOptions.map((soil) => ({ value: soil, label: soil }))}
+                          icon={Layers}
+                        />
                       </div>
 
                       <div className="grid grid-cols-2 gap-1.5">
@@ -369,7 +369,7 @@ export default function ParcelModal({
                           name="organic_carbon"
                           value={formData.organic_carbon}
                           onChange={handleChange}
-                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
+                          className="w-full cursor-pointer appearance-none rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm font-medium text-midnight shadow-sm outline-none transition hover:border-aquaBlue/60 focus:border-aquaBlue focus:ring-2 focus:ring-aquaBlue/20"
                           placeholder="0.00"
                         />
                         {formErrors.organic_carbon ? (
@@ -403,32 +403,28 @@ export default function ParcelModal({
                         <label className="mb-1 block text-xs font-semibold text-midnight">
                           Type d'irrigation
                         </label>
-                        <select
-                          name="irrigation_type"
+                        <FilterDropdown
+                          id="form-irrigation"
                           value={formData.irrigation_type}
-                          onChange={handleChange}
-                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
-                        >
-                          {irrigationOptions.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                        </select>
+                          onChange={(value) => handleChange({ target: { name: 'irrigation_type', value } })}
+                          ariaLabel="Type d'irrigation"
+                          options={irrigationOptions.map((option) => ({ value: option, label: option }))}
+                          icon={Droplets}
+                        />
                       </div>
 
                       <div>
                         <label className="mb-1 block text-xs font-semibold text-midnight">
                           Stade de croissance
                         </label>
-                        <select
-                          name="crop_growth_stage"
+                        <FilterDropdown
+                          id="form-growth-stage"
                           value={formData.crop_growth_stage}
-                          onChange={handleChange}
-                          className="w-full rounded-xl border border-iceBlue bg-white px-3.5 py-2.5 text-sm text-midnight outline-none transition focus:border-aquaBlue"
-                        >
-                          {growthStageOptions.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                          ))}
-                        </select>
+                          onChange={(value) => handleChange({ target: { name: 'crop_growth_stage', value } })}
+                          ariaLabel="Stade de croissance"
+                          options={growthStageOptions.map((option) => ({ value: option, label: option }))}
+                          icon={Sprout}
+                        />
                       </div>
                     </div>
 

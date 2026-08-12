@@ -126,7 +126,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
   }, [value]);
 
   return (
-    <div className="flex flex-col rounded-[1.75rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl overflow-hidden min-h-[480px]">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(2,48,71,0.08)] backdrop-blur-xl">
       {/* Top bar */}
       {/* <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-5 py-3 backdrop-blur">
         <div>
@@ -166,7 +166,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
           />
         </MapContainer>
       </div> */}
-      <div className="relative flex-1" style={{ minHeight: 380 }}>
+      <div className="relative flex-1 min-h-0">
         <MapContainer
           center={DEFAULT_CENTER}
           zoom={8}
@@ -174,7 +174,7 @@ export default function ParcelMap({ value, onChange, onClear }) {
           style={{
             height: '100%',
             width: '100%',
-            minHeight: 380,
+            minHeight: 0,
           }}
         >
           {/* Satellite map */}

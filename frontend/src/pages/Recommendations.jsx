@@ -20,6 +20,9 @@ import {
   BarChart3,
   Zap,
   History,
+  SlidersHorizontal,
+  RotateCcw,
+  ChevronDown,
 } from "lucide-react";
 import { apiRequest } from "../services/api";
 
@@ -29,7 +32,7 @@ const COLORS = {
   primaryLight: "#16A9CC",
   primaryDark: "#0787A8",
   secondary: "#0EA5E9",
-  bg: "#F4FAFC",
+  // bg: "#F4FAFC",
   surfaceSoft: "#EFF9FC",
   textPrimary: "#0F172A",
   textSecondary: "#64748B",
@@ -47,8 +50,8 @@ const STATUS_THEME = {
     softBorder: "#FECDD3",
     text: "#B91C1C",
     gradient: "linear-gradient(145deg, #F87171 0%, #DC2626 60%, #B91C1C 100%)",
-    label: "Critical Need",
-    tag: "🚨 High Need",
+    label: "Besoin critique",
+    tag: "Besoin élevé",
   },
   MEDIUM: {
     solid: COLORS.medium,
@@ -56,8 +59,8 @@ const STATUS_THEME = {
     softBorder: "#FDE68A",
     text: "#B45309",
     gradient: "linear-gradient(145deg, #FBBF24 0%, #F59E0B 60%, #D97706 100%)",
-    label: "Needs Monitoring",
-    tag: "⚠️ Moderate Need",
+    label: "À surveiller",
+    tag: "Besoin modéré",
   },
   LOW: {
     solid: COLORS.low,
@@ -65,8 +68,8 @@ const STATUS_THEME = {
     softBorder: "#A7F3D0",
     text: "#047857",
     gradient: "linear-gradient(145deg, #34D399 0%, #10B981 60%, #047857 100%)",
-    label: "Healthy",
-    tag: "✅ Low Need",
+    label: "État normal",
+    tag: "Besoin faible",
   },
   DEFAULT: {
     solid: COLORS.primary,
@@ -74,10 +77,49 @@ const STATUS_THEME = {
     softBorder: "#BEE7F0",
     text: COLORS.primaryDark,
     gradient: `linear-gradient(145deg, ${COLORS.primaryLight} 0%, ${COLORS.primary} 60%, ${COLORS.primaryDark} 100%)`,
-    label: "Awaiting Analysis",
+    label: "En attente d’analyse",
     tag: "Aucune prédiction",
   },
 };
+
+function FilterSelect({ value, onChange, options, icon: Icon, ariaLabel }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find((option) => option.value === value) || options[0];
+
+  return (
+    <div className="relative" onBlur={() => setIsOpen(false)}>
+      <Icon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-aquaBlue" />
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
+        className={`flex w-full items-center justify-between rounded-xl border bg-white px-3 py-2.5 pl-9 text-left text-sm font-medium text-midnight shadow-sm outline-none transition hover:border-aquaBlue/60 focus:ring-2 focus:ring-aquaBlue/20 ${isOpen ? "border-aquaBlue ring-2 ring-aquaBlue/20" : "border-slate-200"}`}
+      >
+        <span>{selectedOption.label}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180 text-aquaBlue" : ""}`} />
+      </button>
+      {isOpen && (
+        <div role="listbox" aria-label={ariaLabel} className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-xl border border-cyan-200 bg-white p-1.5 shadow-[0_14px_30px_rgba(2,48,71,0.14)]">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={value === option.value}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => { onChange(option.value); setIsOpen(false); }}
+              className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${value === option.value ? "bg-cyan-50 font-semibold text-oceanBlue" : "text-slate-700 hover:bg-slate-50 hover:text-oceanBlue"}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const getTheme = (status) => STATUS_THEME[status] || STATUS_THEME.DEFAULT;
 
@@ -230,6 +272,15 @@ export default function Recommendations() {
             wind_speed: latest.wind_speed,
             sunlight_hours: latest.sunlight_hours,
           },
+          irrigation: latest.recommended_irrigation_mm != null ? {
+            et0_mm: latest.et0_mm, kc: latest.kc, etc_mm: latest.etc_mm,
+            effective_rainfall_mm: latest.effective_rainfall_mm,
+            net_irrigation_mm: latest.net_irrigation_mm,
+            irrigation_efficiency: latest.irrigation_efficiency,
+            gross_irrigation_mm: latest.gross_irrigation_mm,
+            recommended_irrigation_mm: latest.recommended_irrigation_mm,
+            recommended_volume_m3: latest.recommended_volume_m3,
+          } : null,
         });
       } else {
         setPredictionResult(null);
@@ -243,9 +294,17 @@ export default function Recommendations() {
 
   function getRecommendationMessage(pred) {
     const p = pred.toUpperCase();
-    if (p === "HIGH") return "Irrigation is recommended today.";
-    if (p === "MEDIUM") return "Monitor the soil before irrigating.";
-    return "No irrigation required today.";
+    if (p === "HIGH") return "L’irrigation est recommandée aujourd’hui.";
+    if (p === "MEDIUM") return "Surveillez le sol avant d’irriguer.";
+    return "Aucune irrigation n’est nécessaire aujourd’hui.";
+  }
+
+  function translateRecommendationMessage(message, prediction) {
+    const normalized = message?.toLowerCase() || "";
+    if (normalized.includes("irrigation is recommended")) return "L’irrigation est recommandée aujourd’hui.";
+    if (normalized.includes("monitor the soil")) return "Surveillez le sol avant d’irriguer.";
+    if (normalized.includes("no irrigation required")) return "Aucune irrigation n’est nécessaire aujourd’hui.";
+    return message || getRecommendationMessage(prediction);
   }
 
   const handleParcelSelect = (parcelId) => {
@@ -304,8 +363,8 @@ export default function Recommendations() {
     } catch (err) {
       setPredictionError(
         err.message?.includes("Open-Meteo")
-          ? "Weather data is temporarily unavailable. Check the backend connection and try again."
-          : err.message || "Prediction failed. Please try again."
+          ? "Les données météo sont temporairement indisponibles. Vérifiez la connexion au serveur puis réessayez."
+          : err.message || "La prédiction a échoué. Veuillez réessayer."
       );
     } finally {
       setPredicting(false);
@@ -314,7 +373,7 @@ export default function Recommendations() {
 
   const getPredictionBadge = (pred) => {
     if (!pred) return "Aucune prédiction";
-    return pred.toUpperCase();
+    return getTheme(pred.toUpperCase()).tag;
   };
 
   const formatWeatherTime = (timestamp) => {
@@ -329,7 +388,7 @@ export default function Recommendations() {
 
     const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-    return isToday ? `Today ${timeStr}` : `${date.toLocaleDateString()} ${timeStr}`;
+    return isToday ? `Aujourd’hui à ${timeStr}` : `${date.toLocaleDateString("fr-FR")} à ${timeStr}`;
   };
 
   return (
@@ -353,10 +412,10 @@ export default function Recommendations() {
                 Module IA
               </span>
               <h1 className="mt-1 text-3xl font-semibold" style={{ color: COLORS.primaryDark }}>
-                Smart Irrigation Recommendations
+                Recommandations d’irrigation intelligentes
               </h1>
               <p className="mt-1 max-w-xl text-sm leading-relaxed" style={{ color: COLORS.textSecondary }}>
-                Predict irrigation need using AI and today's weather. Select a parcel below to run the analysis.
+                Évaluez le besoin d’irrigation à partir des données météo du jour. Sélectionnez une parcelle pour lancer l’analyse.
               </p>
             </div>
 
@@ -386,7 +445,7 @@ export default function Recommendations() {
                 softBorder: "#BEE7F0",
               },
               {
-                label: "Critical",
+                label: "Critique",
                 value: statCounts.find((s) => s.key === "HIGH")?.count ?? 0,
                 Icon: AlertCircle,
                 iconColor: COLORS.high,
@@ -395,7 +454,7 @@ export default function Recommendations() {
                 softBorder: "#FECDD3",
               },
               {
-                label: "Moderate",
+                label: "Modéré",
                 value: statCounts.find((s) => s.key === "MEDIUM")?.count ?? 0,
                 Icon: AlertTriangle,
                 iconColor: COLORS.medium,
@@ -404,7 +463,7 @@ export default function Recommendations() {
                 softBorder: "#FDE68A",
               },
               {
-                label: "Healthy",
+                label: "Sain",
                 value: statCounts.find((s) => s.key === "LOW")?.count ?? 0,
                 Icon: Sprout,
                 iconColor: COLORS.low,
@@ -441,50 +500,47 @@ export default function Recommendations() {
           variants={itemVariants}
           initial="hidden"
           animate="show"
-          className="rounded-3xl border border-cyan-100 bg-white/80 p-4 shadow-[0_4px_24px_rgba(2,48,71,0.05)] backdrop-blur-sm"
+          className="rounded-3xl border border-iceBlue bg-arcticWhite p-5 shadow-[0_18px_60px_rgba(2,48,71,0.06)]"
         >
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="mr-1 text-[10px] font-extrabold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
-              Filtres :
-            </p>
+          {/* <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            
+            {(selectedFarm !== "ALL" || selectedNeed !== "ALL") && (
+              <button
+                type="button"
+                onClick={() => { setSelectedFarm("ALL"); setSelectedNeed("ALL"); }}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-oceanBlue transition hover:bg-iceBlue"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Réinitialiser
+              </button>
+            )}
+          </div> */}
 
-            <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 shadow-sm" style={{ borderColor: COLORS.border }}>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Farm:</span>
-              <select
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FilterSelect
+                ariaLabel="Filtrer par exploitation"
                 value={selectedFarm}
-                onChange={(e) => setSelectedFarm(e.target.value)}
-                className="cursor-pointer bg-transparent text-xs font-bold outline-none"
-                style={{ color: COLORS.textPrimary }}
-              >
-                <option value="ALL">All Farms</option>
-                {uniqueFarms.map((farm) => (
-                  <option key={farm} value={farm}>{farm}</option>
-                ))}
-              </select>
-            </div>
+                onChange={setSelectedFarm}
+                icon={MapPin}
+                options={[
+                  { value: "ALL", label: "Toutes les exploitations" },
+                  ...uniqueFarms.map((farm) => ({ value: farm, label: farm })),
+                ]}
+            />
 
-            <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 shadow-sm" style={{ borderColor: COLORS.border }}>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Need:</span>
-              <select
+            <FilterSelect
+                ariaLabel="Filtrer par besoin d’irrigation"
                 value={selectedNeed}
-                onChange={(e) => setSelectedNeed(e.target.value)}
-                className="cursor-pointer bg-transparent text-xs font-bold outline-none"
-                style={{ color: COLORS.textPrimary }}
-              >
-                <option value="ALL">All Needs</option>
-                <option value="HIGH">🚨 High Need</option>
-                <option value="MEDIUM">⚠️ Moderate Need</option>
-                <option value="LOW">✅ Low Need</option>
-                <option value="NONE">⚪ No Prediction</option>
-              </select>
-            </div>
-
-            <span
-              className="ml-auto rounded-full px-3 py-1 text-xs font-semibold"
-              style={{ background: COLORS.surfaceSoft, color: COLORS.primaryDark }}
-            >
-              {filteredParcels.length} parcel{filteredParcels.length !== 1 ? "s" : ""}
-            </span>
+                onChange={setSelectedNeed}
+                icon={Droplets}
+                options={[
+                  { value: "ALL", label: "Tous les niveaux de besoin" },
+                  { value: "HIGH", label: "Besoin élevé" },
+                  { value: "MEDIUM", label: "Besoin modéré" },
+                  { value: "LOW", label: "Besoin faible" },
+                  { value: "NONE", label: "Aucune prédiction" },
+                ]}
+            />
           </div>
         </motion.section>
 
@@ -531,7 +587,7 @@ export default function Recommendations() {
                   style={{ borderColor: COLORS.border, background: "rgba(255,255,255,0.4)" }}
                 >
                   <AlertCircle className="mx-auto h-10 w-10" style={{ color: COLORS.textMuted }} />
-                  <h3 className="text-base font-bold" style={{ color: COLORS.textPrimary }}>No matching parcels</h3>
+                  <h3 className="text-base font-bold" style={{ color: COLORS.textPrimary }}>Aucune parcelle correspondante</h3>
                   <p className="max-w-sm text-xs" style={{ color: COLORS.textSecondary }}>
                     No parcels match your farm or irrigation need filters. Try adjusting your selections.
                   </p>
@@ -826,7 +882,7 @@ export default function Recommendations() {
                                               <div>
                                                 <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Besoin d'irrigation</p>
                                                 <p className="mt-1 text-xl font-black uppercase tracking-tight" style={{ color: getTheme(predictionResult.prediction).text }}>
-                                                  {predictionResult.prediction}
+                                                  {getTheme(predictionResult.prediction).tag}
                                                 </p>
                                               </div>
                                               <WaterGauge
@@ -837,20 +893,20 @@ export default function Recommendations() {
                                               />
                                             </div>
                                             <p className="px-1 text-[11px] italic" style={{ color: COLORS.textSecondary }}>
-                                              "{predictionResult.recommendation_message}"
+                                              "{translateRecommendationMessage(predictionResult.recommendation_message, predictionResult.prediction)}"
                                             </p>
 
                                             {predictionResult.prediction === "MEDIUM" && predictionResult.probabilities && (
                                               <div className="flex gap-2 rounded-xl border p-2.5" style={{ borderColor: COLORS.border, background: COLORS.surfaceSoft }}>
                                                 <div className="flex-1 py-0.5 text-center">
-                                                  <p className="text-[8px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Low Need (🟢)</p>
+                                                  <p className="text-[8px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Besoin faible</p>
                                                   <p className="mt-0.5 text-xs font-black" style={{ color: COLORS.low }}>
                                                     {predictionResult.probabilities.LOW != null ? `${Math.round(predictionResult.probabilities.LOW * 100)}%` : "—"}
                                                   </p>
                                                 </div>
                                                 <div className="my-1 w-[1px] self-stretch" style={{ background: COLORS.border }} />
                                                 <div className="flex-1 py-0.5 text-center">
-                                                  <p className="text-[8px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>High Need (🔴)</p>
+                                                  <p className="text-[8px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Besoin élevé</p>
                                                   <p className="mt-0.5 text-xs font-black" style={{ color: COLORS.high }}>
                                                     {predictionResult.probabilities.HIGH != null ? `${Math.round(predictionResult.probabilities.HIGH * 100)}%` : "—"}
                                                   </p>
@@ -936,21 +992,18 @@ export default function Recommendations() {
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ type: "spring", duration: 0.4 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-3xl border bg-white shadow-2xl"
-              style={{ borderColor: COLORS.border }}
+              className="relative max-h-[92vh] w-full max-w-lg overflow-hidden rounded-[2rem] border bg-[#f8fcfd] shadow-[0_28px_80px_rgba(2,48,71,0.28)]"
+              style={{ borderColor: "#bde8ef" }}
             >
-              <div className="h-1.5 w-full" style={{ background: getTheme(predictionResult.prediction).gradient }} />
-
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute right-5 top-5 z-20 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition"
-                style={{ background: "rgba(241,245,249,0.8)", color: COLORS.textSecondary }}
+                className="absolute right-5 top-5 z-20 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
               >
                 <X className="h-4 w-4" />
               </button>
 
-              <div className="space-y-5 p-6">
-                <div className="flex items-center gap-3">
+              <div className="space-y-4 p-5 sm:p-6">
+                <div className="flex items-center gap-3 rounded-2xl border border-cyan-100 bg-white p-3.5 shadow-sm">
                   <span
                     className="flex h-10 w-10 items-center justify-center rounded-xl"
                     style={{ background: getTheme(predictionResult.prediction).soft, color: getTheme(predictionResult.prediction).text }}
@@ -958,32 +1011,35 @@ export default function Recommendations() {
                     <Sprout className="h-5 w-5" />
                   </span>
                   <div>
-                    <h2 className="text-lg font-black" style={{ color: COLORS.textPrimary }}>Agronomic AI Diagnostic</h2>
-                    <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>
-                      <MapPin className="h-3 w-3" /> {predictionResult.parcel_name || "Parcel"}
+                    <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-cyan-700">Diagnostic d’irrigation IA</p>
+                    <h2 className="mt-0.5 text-xl font-black tracking-tight" style={{ color: COLORS.textPrimary }}>{predictionResult.parcel_name || "Parcelle"}</h2>
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>
+                      <MapPin className="h-3 w-3 text-cyan-600" /> Analyse agronomique
                     </p>
                   </div>
                 </div>
 
-                <div className="my-2 border-t" style={{ borderColor: COLORS.border }} />
+                
 
                 {/* Hero Result Section */}
                 <div
-                  className="flex items-center justify-between gap-4 rounded-2xl border p-5"
+                  className="relative flex items-center justify-between gap-4 overflow-hidden rounded-3xl border p-5 shadow-sm"
                   style={{ borderColor: getTheme(predictionResult.prediction).softBorder, background: getTheme(predictionResult.prediction).soft }}
                 >
-                  <div className="flex-1 space-y-1.5">
-                    <span
-                      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-white"
-                      style={{ background: getTheme(predictionResult.prediction).solid }}
+                  <div className="relative z-10 flex-1 space-y-1.5">
+                    <p
+                      className="text-3xl font-black uppercase tracking-tight sm:text-4xl"
+                      style={{ color: getTheme(predictionResult.prediction).text }}
                     >
                       {getTheme(predictionResult.prediction).tag}
-                    </span>
-                    <h3 className="mt-1 text-xs font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Recommandation</h3>
-                    <p className="text-xs italic leading-relaxed" style={{ color: COLORS.textSecondary }}>
-                      "{predictionResult.recommendation_message}"
+                    </p>
+                    <h3 className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.18em]" style={{ color: COLORS.textMuted }}>Besoin d’irrigation · {Math.round(predictionResult.confidence * 100)} % de confiance</h3>
+                    <p className="max-w-[290px] text-sm font-medium leading-relaxed" style={{ color: COLORS.textSecondary }}>
+                      "{translateRecommendationMessage(predictionResult.recommendation_message, predictionResult.prediction)}"
                     </p>
                   </div>
+
+                  <div className="pointer-events-none absolute -bottom-10 -right-8 h-32 w-32 rounded-full border-[18px] opacity-20" style={{ borderColor: getTheme(predictionResult.prediction).solid }} />
 
                   <WaterGauge
                     id="modal-hero"
@@ -993,35 +1049,48 @@ export default function Recommendations() {
                   />
                 </div>
 
-                {/* Sensor Readings Snapshot */}
-                <div className="space-y-2">
-                  <p className="text-[9px] font-extrabold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>Sensor Readings Snapshot</p>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {[
-                      { label: "Humidité Sol", value: `${soilMoisture}%`, icon: <Gauge className="h-4 w-4" style={{ color: COLORS.primary }} /> },
-                      { label: "Irrigation Préc.", value: predictionResult.previous_irrigation != null ? `${predictionResult.previous_irrigation} mm` : "—", icon: <Droplets className="h-4 w-4" style={{ color: COLORS.secondary }} /> },
-                      { label: "Température", value: predictionResult.weather?.temperature != null ? `${predictionResult.weather.temperature} °C` : "—", icon: <Thermometer className="h-4 w-4" style={{ color: COLORS.medium }} /> },
-                      { label: "Pluviométrie", value: predictionResult.weather?.rainfall != null ? `${predictionResult.weather.rainfall} mm` : "—", icon: <CloudRain className="h-4 w-4" style={{ color: COLORS.primaryDark }} /> },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-3 rounded-xl border bg-white p-2.5 shadow-sm transition-all duration-200" style={{ borderColor: COLORS.border }}>
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: COLORS.surfaceSoft }}>
-                          {item.icon}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-[8px] font-extrabold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>{item.label}</p>
-                          <p className="mt-0.5 text-xs font-black" style={{ color: COLORS.textPrimary }}>{item.value}</p>
-                        </div>
+                {predictionResult.irrigation && (
+                  <div className="rounded-3xl border border-cyan-200 bg-gradient-to-br from-[#e4f8fb] via-white to-white p-5 shadow-[0_12px_30px_rgba(7,152,184,0.08)] sm:p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-cyan-700">Eau recommandée</p>
+                      <Droplets className="h-5 w-5 text-cyan-600" />
+                    </div>
+                    <div className="mt-2 flex items-end justify-between gap-3">
+                      <div>
+                        <p className="text-5xl font-black leading-none tracking-tight text-slate-900">
+                          {Number(predictionResult.irrigation.recommended_irrigation_mm).toFixed(1)} mm
+                        </p>
+                        <p className="mt-2 text-sm font-bold text-cyan-700">
+                          ≈ {Number(predictionResult.irrigation.recommended_volume_m3).toFixed(1)} m³
+                        </p>
                       </div>
-                    ))}
+                      <p className="max-w-[130px] text-right text-[10px] leading-relaxed text-slate-500">
+                        Besoin estimé pour cette parcelle
+                      </p>
+                    </div>
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                        <p className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Irrigation précédente</p>
+                        <p className="mt-1 text-xl font-black text-slate-800">
+                          {predictionResult.previous_irrigation != null
+                            ? `${Number(predictionResult.previous_irrigation).toFixed(1)} mm`
+                            : `${Number(previousIrrigation).toFixed(1)} mm`}
+                        </p>
+                        <p className="text-[10px] text-slate-400">Saisie de l’agriculteur</p>
+                      </div>
+                      <div className="rounded-2xl border border-cyan-100 bg-cyan-50/70 p-3">
+                        <p className="text-[9px] font-extrabold uppercase tracking-wider text-cyan-600">Volume recommandé</p>
+                        <p className="mt-1 text-xl font-black text-cyan-800">{Number(predictionResult.irrigation.recommended_volume_m3).toFixed(1)} m³</p>
+                        <p className="text-[10px] text-cyan-600">Pour cette parcelle</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                <div className="my-2 border-t" style={{ borderColor: COLORS.border }} />
+                )}
 
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="w-full rounded-xl py-3 text-xs font-black uppercase tracking-widest text-white transition-all duration-200 active:scale-[0.98]"
+                  className="w-full rounded-xl py-2.5 text-xs font-black uppercase tracking-widest text-white transition-all duration-200 active:scale-[0.98]"
                   style={{
                     background: getTheme(predictionResult.prediction).gradient,
                     boxShadow: `0 12px 28px -10px ${getTheme(predictionResult.prediction).solid}80`,
@@ -1030,21 +1099,7 @@ export default function Recommendations() {
                   Fermer le Diagnostic
                 </button>
 
-                <div className="flex items-center justify-center gap-1 pt-1 text-[9px] font-bold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>
-                  <Clock className="h-3 w-3" />
-                  <span>
-                    Calculé:{" "}
-                    {predictionResult.timestamp
-                      ? new Date(predictionResult.timestamp).toLocaleString("fr-FR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          second: "2-digit",
-                          day: "2-digit",
-                          month: "short",
-                        })
-                      : "À l'instant"}
-                  </span>
-                </div>
+                
               </div>
             </motion.div>
           </motion.div>
