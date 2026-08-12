@@ -24,6 +24,7 @@ class PredictionHistory(Base):
     prediction = Column(String(50), nullable=False)
     confidence = Column(Float, nullable=False)
     previous_prediction = Column(String(50), nullable=True)
+    previous_irrigation = Column(Float, nullable=True)
     predicted_at = Column(DateTime(timezone=True), server_default=func.now())
     notification_sent = Column(Boolean, default=False, nullable=False)
 

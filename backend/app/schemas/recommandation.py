@@ -21,6 +21,7 @@ class PredictResponse(BaseModel):
     recommendation_message: str
     timestamp: datetime
     previous_prediction: Optional[str] = None
+    previous_irrigation: Optional[float] = None
     parcel_name: str
     weather: WeatherInfo
     probabilities: Optional[dict] = None
@@ -43,6 +44,7 @@ class ParcelOptionResponse(BaseModel):
     crop_growth_stage: Optional[str] = None
     irrigation_type: Optional[str] = None
     mulching_used: Optional[str] = None
+    nom_exploitation: Optional[str] = None
     latest_prediction: Optional[LatestPredictionInfo] = None
 
 class HistoryRecordResponse(BaseModel):
@@ -56,5 +58,6 @@ class HistoryRecordResponse(BaseModel):
     prediction: str
     confidence: float
     previous_prediction: Optional[str] = None
+    previous_irrigation: Optional[float] = None
     predicted_at: datetime
     notification_sent: bool

@@ -37,7 +37,8 @@ export default function HistoryRecommendations() {
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedParcelFilter, setSelectedParcelFilter] = useState("all");
-  const [selectedPredictionFilter, setSelectedPredictionFilter] = useState("all");
+  const [selectedPredictionFilter, setSelectedPredictionFilter] =
+    useState("all");
   const [sortOrder, setSortOrder] = useState("desc"); // 'asc' or 'desc' for predicted_at
 
   useEffect(() => {
@@ -55,7 +56,9 @@ export default function HistoryRecommendations() {
       // 2. Fetch history for all parcels in parallel
       const historyPromises = parcelsData.map(async (p) => {
         try {
-          const historyData = await apiRequest(`/recommendation/history/${p.id_parcelle}`);
+          const historyData = await apiRequest(
+            `/recommendation/history/${p.id_parcelle}`,
+          );
           return historyData.map((record) => ({
             ...record,
             parcelName: p.nom,
@@ -64,7 +67,10 @@ export default function HistoryRecommendations() {
             id_parcelle: p.id_parcelle,
           }));
         } catch (err) {
-          console.error(`Failed to load history for parcel ${p.id_parcelle}:`, err);
+          console.error(
+            `Failed to load history for parcel ${p.id_parcelle}:`,
+            err,
+          );
           return [];
         }
       });
@@ -103,15 +109,19 @@ export default function HistoryRecommendations() {
       // 1. Search Query (Matches parcel name or crop type)
       const matchesSearch =
         item.parcelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.cropType && item.cropType.toLowerCase().includes(searchQuery.toLowerCase()));
+        (item.cropType &&
+          item.cropType.toLowerCase().includes(searchQuery.toLowerCase()));
 
       // 2. Parcel Filter
       const matchesParcel =
-        selectedParcelFilter === "all" || String(item.id_parcelle) === selectedParcelFilter;
+        selectedParcelFilter === "all" ||
+        String(item.id_parcelle) === selectedParcelFilter;
 
       // 3. Prediction Filter
       const matchesPrediction =
-        selectedPredictionFilter === "all" || item.prediction.toUpperCase() === selectedPredictionFilter.toUpperCase();
+        selectedPredictionFilter === "all" ||
+        item.prediction.toUpperCase() ===
+          selectedPredictionFilter.toUpperCase();
 
       return matchesSearch && matchesParcel && matchesPrediction;
     })
@@ -141,7 +151,8 @@ export default function HistoryRecommendations() {
           Historique des recommandations
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 md:text-base">
-          Visualisez, recherchez et filtrez l'historique complet de toutes les prédictions d'irrigation générées par l'IA.
+          Visualisez, recherchez et filtrez l'historique complet de toutes les
+          prédictions d'irrigation générées par l'IA.
         </p>
       </div>
 
@@ -242,6 +253,7 @@ export default function HistoryRecommendations() {
                     <th className="px-6 py-4">Parcelle</th>
                     <th className="px-6 py-4">Date & Heure</th>
                     <th className="px-6 py-4 text-center">Humidité</th>
+                    <th className="px-6 py-4 text-center">Irrigation Précédente</th>
                     <th className="px-6 py-4">Météo</th>
                     <th className="px-6 py-4">Décision IA</th>
                     <th className="px-6 py-4 text-right">Confiance</th>
@@ -250,9 +262,13 @@ export default function HistoryRecommendations() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {filteredHistory.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
+                      <td
+                        colSpan="7"
+                        className="px-6 py-12 text-center text-slate-400"
+                      >
                         <FileText className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                        Aucun enregistrement d'historique ne correspond aux filtres.
+                        Aucun enregistrement d'historique ne correspond aux
+                        filtres.
                       </td>
                     </tr>
                   ) : (
@@ -265,11 +281,16 @@ export default function HistoryRecommendations() {
                       const dateStr = date.toLocaleDateString();
 
                       return (
-                        <tr key={record.id} className="hover:bg-slate-50/30 transition-colors">
+                        <tr
+                          key={record.id}
+                          className="hover:bg-slate-50/30 transition-colors"
+                        >
                           {/* Parcel column */}
                           <td className="px-6 py-4">
                             <div>
-                              <div className="font-bold text-slate-900">{record.parcelName}</div>
+                              <div className="font-bold text-slate-900">
+                                {record.parcelName}
+                              </div>
                               <div className="text-xs text-slate-400">
                                 {record.cropType || "Sans culture"}
                               </div>
@@ -295,22 +316,42 @@ export default function HistoryRecommendations() {
                             </span>
                           </td>
 
+                          {/* Previous Irrigation */}
+                          <td className="px-6 py-4 text-center">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700">
+                              <Droplets className="h-3 w-3" />
+                              {record.previous_irrigation != null ? `${record.previous_irrigation} mm` : "—"}
+                            </span>
+                          </td>
+
                           {/* Weather columns compact */}
                           <td className="px-6 py-4 text-slate-600">
                             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                              <span className="flex items-center gap-0.5" title="Température">
+                              <span
+                                className="flex items-center gap-0.5"
+                                title="Température"
+                              >
                                 <Thermometer className="h-3 w-3 text-orange-400" />
                                 {record.temperature}°C
                               </span>
-                              <span className="flex items-center gap-0.5" title="Humidité de l'air">
+                              <span
+                                className="flex items-center gap-0.5"
+                                title="Humidité de l'air"
+                              >
                                 <Droplets className="h-3 w-3 text-blue-400" />
                                 {record.humidity}%
                               </span>
-                              <span className="flex items-center gap-0.5" title="Pluie">
+                              <span
+                                className="flex items-center gap-0.5"
+                                title="Pluie"
+                              >
                                 <CloudRain className="h-3 w-3 text-cyan-400" />
                                 {record.rainfall}mm
                               </span>
-                              <span className="flex items-center gap-0.5" title="Vent">
+                              <span
+                                className="flex items-center gap-0.5"
+                                title="Vent"
+                              >
                                 <Wind className="h-3 w-3 text-teal-400" />
                                 {record.wind_speed}km/h
                               </span>
@@ -321,7 +362,7 @@ export default function HistoryRecommendations() {
                           <td className="px-6 py-4">
                             <span
                               className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${getPredictionColorClass(
-                                record.prediction
+                                record.prediction,
                               )}`}
                             >
                               {getPredictionBadge(record.prediction)}

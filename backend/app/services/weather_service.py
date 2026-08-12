@@ -1,5 +1,13 @@
 import requests
-from fastapi import HTTPException
+
+
+FALLBACK_WEATHER = {
+    "temperature": 25.0,
+    "humidity": 50.0,
+    "rainfall": 0.0,
+    "wind_speed": 10.0,
+    "sunlight_hours": 10.0,
+}
 
 def get_today_weather(latitude: float, longitude: float) -> dict:
     url = "https://api.open-meteo.com/v1/forecast"
@@ -37,8 +45,12 @@ def get_today_weather(latitude: float, longitude: float) -> dict:
             "wind_speed": float(wind_speed),
             "sunlight_hours": float(sunlight_hours)
         }
-    except Exception as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Failed to fetch weather data from Open-Meteo: {str(e)}"
-        )
+    except requests.RequestException as e:
+        # A temporary weather-provider/network failure should not prevent the
+        # farmer from receiving an irrigation recommendation. The prediction
+        # service can continue with clearly defined conservative defaults.
+        print(f"Open-Meteo unavailable; using fallback weather data: {e}")
+        return FALLBACK_WEATHER.copy()
+    except (ValueError, TypeError, KeyError, IndexError) as e:
+        print(f"Invalid Open-Meteo response; using fallback weather data: {e}")
+        return FALLBACK_WEATHER.copy()

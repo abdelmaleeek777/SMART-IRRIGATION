@@ -30,9 +30,9 @@ def get_recommendation_parcels(
     db: Session = Depends(get_db),
     current_user: Agriculteur = Depends(get_current_user)
 ):
-    # 1. Fetch all parcels owned by the current farmer
+    # 1. Fetch all parcels owned by the current farmer with their farm names
     parcelles = (
-        db.query(Parcelle)
+        db.query(Parcelle, Exploitation.nom.label("nom_exploitation"))
         .options(joinedload(Parcelle.profile))
         .join(Exploitation)
         .filter(Exploitation.id_agriculteur == current_user.id_agriculteur)
@@ -40,7 +40,7 @@ def get_recommendation_parcels(
     )
     
     result = []
-    for p in parcelles:
+    for p, nom_exploitation in parcelles:
         # 2. Query the latest prediction for this parcel
         latest_pred = (
             db.query(PredictionHistory)
@@ -72,6 +72,7 @@ def get_recommendation_parcels(
                 crop_growth_stage=profile.crop_growth_stage if profile else None,
                 irrigation_type=profile.irrigation_type if profile else None,
                 mulching_used=profile.mulching_used if profile else None,
+                nom_exploitation=nom_exploitation,
                 latest_prediction=latest_pred_info
             )
         )
@@ -169,6 +170,7 @@ def post_predict(
         prediction=prediction_upper,
         confidence=confidence,
         previous_prediction=prev_prediction_val,
+        previous_irrigation=req.previous_irrigation,
         notification_sent=prediction_changed
     )
     
@@ -189,6 +191,7 @@ def post_predict(
         recommendation_message=msg,
         timestamp=new_history.predicted_at,
         previous_prediction=prev_prediction_val,
+        previous_irrigation=new_history.previous_irrigation,
         parcel_name=parcel.nom,
         probabilities=probabilities,
         weather=WeatherInfo(
@@ -243,6 +246,7 @@ def get_prediction_history(
             prediction=r.prediction.upper(),
             confidence=r.confidence,
             previous_prediction=r.previous_prediction,
+            previous_irrigation=r.previous_irrigation,
             predicted_at=r.predicted_at,
             notification_sent=r.notification_sent
         ) for r in records
