@@ -1,3 +1,8 @@
 .env
 .venv
 __pycache__
+# ML datasets
+backend/ml_training/dataset/
+
+# Trained ML models
+backend/ml_training/notebooks/*.pkl
